@@ -10,6 +10,7 @@ import { cn, formatBalance } from "@/lib/utils"
 import { getCardDisplay, isRedSuit, Hand, Card as GameCard } from "@/lib/game-logic/blackjack"
 import { Spade, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { GameHelpModal } from "./GameHelpModal"
 
 interface DealerHand {
   cards: (GameCard | { hidden: true })[]
@@ -191,14 +192,32 @@ export function BlackjackGame() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-3 rounded-lg bg-amber-500/20">
-          <Spade className="h-8 w-8 text-amber-400" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-lg bg-amber-500/20">
+            <Spade className="h-8 w-8 text-amber-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Blackjack</h1>
+            <p className="text-muted-foreground">Beat the dealer to 21!</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Blackjack</h1>
-          <p className="text-muted-foreground">Beat the dealer to 21!</p>
-        </div>
+        <GameHelpModal
+          title="How to play Blackjack"
+          description="Classic 21 vs dealer"
+        >
+          <p>1. Set your bet and press <strong>Deal</strong> to start a round.</p>
+          <p>2. You and dealer each get two cards; dealer may have one hidden card.</p>
+          <p>3. Your goal is to get as close to 21 as possible without going over.</p>
+          <p>4. On your turn you can:</p>
+          <ul className="list-disc list-inside ml-2">
+            <li><strong>Hit</strong> — take another card.</li>
+            <li><strong>Stand</strong> — stop and let the dealer play.</li>
+          </ul>
+          <p>5. Dealer draws until reaching at least 17, then stands.</p>
+          <p>6. If you bust (&gt;21) you lose; if dealer busts you win automatically.</p>
+          <p>7. Blackjack (A + 10-value) pays enhanced 2.5x according to the rules block.</p>
+        </GameHelpModal>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -347,7 +366,7 @@ export function BlackjackGame() {
             )}
 
             <div className="p-4 rounded-lg bg-muted space-y-2 text-sm">
-              <p className="font-medium">Rules:</p>
+              <p className="font-medium">Payouts:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-1">
                 <li>Blackjack pays 2.5x</li>
                 <li>Regular win pays 2x</li>

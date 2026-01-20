@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn, formatBalance } from "@/lib/utils"
 import { SLOT_SYMBOLS } from "@/lib/game-logic/slots"
-import { SquareStack, Loader2 } from "lucide-react"
+import { SquareStack, Loader2, Sparkles } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { GameHelpModal } from "./GameHelpModal"
 
 export function SlotsGame() {
   const { data: session, status } = useSession()
@@ -115,20 +116,41 @@ export function SlotsGame() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-3 rounded-lg bg-purple-500/20">
-          <SquareStack className="h-8 w-8 text-purple-400" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-lg bg-purple-500/20">
+            <SquareStack className="h-8 w-8 text-purple-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Slots</h1>
+            <p className="text-muted-foreground">Spin the reels and hit the jackpot!</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Slots</h1>
-          <p className="text-muted-foreground">Spin the reels and hit the jackpot!</p>
-        </div>
+        <GameHelpModal
+          title="How to play Slots"
+          description="3x5 video slot with multiple win lines"
+        >
+          <p>1. Set your bet size in the right panel.</p>
+          <p>2. Press <strong>SPIN</strong> to start the round.</p>
+          <p>3. The reels spin and stop on a random 3x5 grid of symbols.</p>
+          <p>4. Payouts are awarded for winning combinations from left to right according to the paytable.</p>
+          <p>5. Highlighted rows show which lines have won and their multiplier.</p>
+          <p>6. Your balance is updated automatically after each spin.</p>
+        </GameHelpModal>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardContent className="p-6">
-            <div className="bg-gradient-to-b from-purple-900/50 to-purple-950/50 rounded-xl p-6 border-4 border-amber-500/50">
+            <div className="bg-gradient-to-b from-purple-900/50 to-purple-950/50 rounded-xl p-6 border-4 border-amber-500/50 relative overflow-hidden">
+              {spinning && (
+                <motion.div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "100%" }}
+                  transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+                />
+              )}
               <div className="bg-black/50 rounded-lg p-4">
                 <div className="grid grid-rows-3 gap-2">
                   {grid.map((row, rowIndex) => (

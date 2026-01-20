@@ -10,6 +10,7 @@ import { cn, formatBalance } from "@/lib/utils"
 import { getCardDisplay, isRedSuit, PAYTABLE, Card as GameCard } from "@/lib/game-logic/poker"
 import { Target, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { GameHelpModal } from "./GameHelpModal"
 
 type Phase = "betting" | "draw" | "complete"
 
@@ -175,14 +176,27 @@ export function PokerGame() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-3 rounded-lg bg-pink-500/20">
-          <Target className="h-8 w-8 text-pink-400" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-lg bg-pink-500/20">
+            <Target className="h-8 w-8 text-pink-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Video Poker</h1>
+            <p className="text-muted-foreground">Jacks or Better</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Video Poker</h1>
-          <p className="text-muted-foreground">Jacks or Better</p>
-        </div>
+        <GameHelpModal
+          title="How to play Video Poker"
+          description="Jacks or Better, 5-card draw"
+        >
+          <p>1. Choose your bet amount and press <strong>Deal</strong>.</p>
+          <p>2. You receive 5 cards; click any card to mark it as HOLD.</p>
+          <p>3. Press <strong>Draw</strong> to replace non-held cards with new ones.</p>
+          <p>4. Final 5-card hand is evaluated according to the paytable on the right.</p>
+          <p>5. Minimum paying hand is usually Jacks or Better; stronger hands pay more.</p>
+          <p>6. After payout you can start a new game with <strong>New Game</strong>.</p>
+        </GameHelpModal>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

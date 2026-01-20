@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { cn, formatBalance } from "@/lib/utils"
 import { calculateDiceMultiplier } from "@/lib/game-logic/dice"
-import { Dices, ArrowUp, ArrowDown, Loader2 } from "lucide-react"
+import { Dices, ArrowUp, ArrowDown, Loader2, Sparkles } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { GameHelpModal } from "./GameHelpModal"
 
 export function DiceGame() {
   const { data: session, status } = useSession()
@@ -98,14 +99,34 @@ export function DiceGame() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-3 rounded-lg bg-blue-500/20">
-          <Dices className="h-8 w-8 text-blue-400" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-lg bg-blue-500/20">
+            <Dices className="h-8 w-8 text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Dice</h1>
+            <p className="text-muted-foreground">Guess if the roll will be higher or lower</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Dice</h1>
-          <p className="text-muted-foreground">Guess if the roll will be higher or lower</p>
-        </div>
+        <GameHelpModal
+          title="How to play Dice"
+          description="Classic over / under dice game"
+        >
+          <p>1. Choose your bet size in the panel on the right.</p>
+          <p>2. Move the slider to set the target number between 1 and 99.</p>
+          <p>3. Pick one of two modes:</p>
+          <ul className="list-disc list-inside ml-2">
+            <li>
+              <strong>Roll Under</strong> — you win if the roll is strictly lower than target.
+            </li>
+            <li>
+              <strong>Roll Over</strong> — you win if the roll is strictly higher than target.
+            </li>
+          </ul>
+          <p>4. The closer the target is to the edge, the higher the multiplier but the lower the win chance.</p>
+          <p>5. Press the roll button to play one round.</p>
+        </GameHelpModal>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -119,7 +140,7 @@ export function DiceGame() {
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.5, opacity: 0 }}
                   className={cn(
-                    "w-32 h-32 rounded-2xl flex items-center justify-center text-5xl font-bold",
+                    "w-32 h-32 rounded-2xl flex items-center justify-center text-5xl font-bold relative overflow-hidden",
                     result
                       ? result.win
                         ? "bg-green-500/20 text-green-400 glow-green"
@@ -127,6 +148,17 @@ export function DiceGame() {
                       : "bg-muted"
                   )}
                 >
+                  {result && result.win && (
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 1, 0] }}
+                      transition={{ duration: 0.8 }}
+                    >
+                      <Sparkles className="absolute -top-2 -left-2 h-6 w-6 text-amber-300" />
+                      <Sparkles className="absolute -bottom-2 -right-2 h-6 w-6 text-amber-300" />
+                    </motion.div>
+                  )}
                   {result ? result.roll : "?"}
                 </motion.div>
               </AnimatePresence>

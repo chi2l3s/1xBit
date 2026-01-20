@@ -10,6 +10,7 @@ import { cn, formatBalance } from "@/lib/utils"
 import { BetType, ROULETTE_NUMBERS, getBetMultiplier } from "@/lib/game-logic/roulette"
 import { CircleDot, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { GameHelpModal } from "./GameHelpModal"
 
 interface PlacedBet {
   type: BetType
@@ -125,14 +126,27 @@ export function RouletteGame() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-3 rounded-lg bg-red-500/20">
-          <CircleDot className="h-8 w-8 text-red-400" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-lg bg-red-500/20">
+            <CircleDot className="h-8 w-8 text-red-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Roulette</h1>
+            <p className="text-muted-foreground">Classic European roulette</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Roulette</h1>
-          <p className="text-muted-foreground">Classic European roulette</p>
-        </div>
+        <GameHelpModal
+          title="How to play Roulette"
+          description="European roulette with inside & outside bets"
+        >
+          <p>1. Set chip value in the right panel.</p>
+          <p>2. Click numbers or outside areas (red/black, even/odd, dozens, etc.) to place bets.</p>
+          <p>3. Each click adds one chip of the selected value to that spot.</p>
+          <p>4. Total bet cannot exceed your current balance.</p>
+          <p>5. Press <strong>SPIN</strong> to spin the wheel and resolve all bets at once.</p>
+          <p>6. Payouts depend on bet type (inside bets pay more, outside bets hit more often).</p>
+        </GameHelpModal>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
