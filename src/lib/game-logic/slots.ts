@@ -1,11 +1,11 @@
 export const SLOT_SYMBOLS = [
-  { id: "seven", emoji: "7️⃣", multiplier: 10 },
-  { id: "diamond", emoji: "💎", multiplier: 5 },
-  { id: "bell", emoji: "🔔", multiplier: 3 },
-  { id: "cherry", emoji: "🍒", multiplier: 2 },
-  { id: "lemon", emoji: "🍋", multiplier: 1.5 },
-  { id: "orange", emoji: "🍊", multiplier: 1.2 },
-  { id: "grape", emoji: "🍇", multiplier: 1 },
+  { id: "seven", multiplier: 100 },
+  { id: "diamond", multiplier: 50 },
+  { id: "bell", multiplier: 25 },
+  { id: "cherry", multiplier: 15 },
+  { id: "lemon", multiplier: 10 },
+  { id: "orange", multiplier: 10 },
+  { id: "grape", multiplier: 5 },
 ]
 
 export interface SlotResult {
@@ -46,15 +46,20 @@ function checkLine(symbols: string[]): { match: boolean; count: number } {
   return { match: count >= 3, count }
 }
 
-export function playSlots(bet: number): SlotResult {
+export function playSlots(bet: number, riggedGrid?: string[][]): SlotResult {
   const rows = 3
   const cols = 5
-  const grid: string[][] = []
+  let grid: string[][]
 
-  for (let row = 0; row < rows; row++) {
-    grid[row] = []
-    for (let col = 0; col < cols; col++) {
-      grid[row][col] = getRandomSymbol().emoji
+  if (riggedGrid) {
+    grid = riggedGrid
+  } else {
+    grid = []
+    for (let row = 0; row < rows; row++) {
+      grid[row] = []
+      for (let col = 0; col < cols; col++) {
+        grid[row][col] = getRandomSymbol().id
+      }
     }
   }
 
@@ -66,7 +71,7 @@ export function playSlots(bet: number): SlotResult {
     const { match, count } = checkLine(lineSymbols)
 
     if (match) {
-      const symbol = SLOT_SYMBOLS.find((s) => s.emoji === lineSymbols[0])
+      const symbol = SLOT_SYMBOLS.find((s) => s.id === lineSymbols[0])
       if (symbol) {
         const lineMultiplier = symbol.multiplier * (count - 2)
         winLines.push({
@@ -82,7 +87,7 @@ export function playSlots(bet: number): SlotResult {
   const middleDiagonal = [grid[0][0], grid[1][1], grid[2][2], grid[1][3], grid[0][4]]
   const { match: diagMatch, count: diagCount } = checkLine(middleDiagonal)
   if (diagMatch) {
-    const symbol = SLOT_SYMBOLS.find((s) => s.emoji === middleDiagonal[0])
+    const symbol = SLOT_SYMBOLS.find((s) => s.id === middleDiagonal[0])
     if (symbol) {
       const diagMultiplier = symbol.multiplier * (diagCount - 2)
       winLines.push({

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,9 +9,18 @@ import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { cn, formatBalance } from "@/lib/utils"
 import { calculateDiceMultiplier } from "@/lib/game-logic/dice"
-import { Dices, ArrowUp, ArrowDown, Loader2, Sparkles } from "lucide-react"
+import { ArrowUp, ArrowDown, Loader2, TrendingUp, History, Volume2, VolumeX } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
+import { AnimatedDice, DiceResultDisplay } from "./dice/AnimatedDice"
+
+interface HistoryItem {
+  roll: number
+  target: number
+  isOver: boolean
+  win: boolean
+  payout: number
+}
 
 export function DiceGame() {
   const { data: session, status } = useSession()
@@ -21,11 +30,14 @@ export function DiceGame() {
   const [target, setTarget] = useState<number>(50)
   const [isOver, setIsOver] = useState<boolean>(true)
   const [loading, setLoading] = useState(false)
+  const [rolling, setRolling] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(true)
   const [result, setResult] = useState<{
     roll: number
     win: boolean
     payout: number
   } | null>(null)
+  const [history, setHistory] = useState<HistoryItem[]>([])
 
   const multiplier = calculateDiceMultiplier(target, isOver)
   const winChance = isOver ? 100 - target : target
@@ -56,6 +68,7 @@ export function DiceGame() {
     if (!session || bet <= 0 || bet > balance) return
 
     setLoading(true)
+    setRolling(true)
     setResult(null)
 
     try {
@@ -67,16 +80,30 @@ export function DiceGame() {
 
       const data = await res.json()
 
+      // Wait for dice animation
+      await new Promise(resolve => setTimeout(resolve, 1200))
+
+      setRolling(false)
+
       if (res.ok) {
-        setResult({
+        const newResult = {
           roll: data.roll,
           win: data.win,
           payout: data.payout,
-        })
+        }
+        setResult(newResult)
         setBalance(data.newBalance)
+        setHistory(prev => [{
+          roll: data.roll,
+          target,
+          isOver,
+          win: data.win,
+          payout: data.payout
+        }, ...prev.slice(0, 9)])
       }
     } catch (error) {
       console.error("Game error:", error)
+      setRolling(false)
     } finally {
       setLoading(false)
     }
@@ -98,212 +125,363 @@ export function DiceGame() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-3">
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-lg bg-blue-500/20">
-            <Dices className="h-8 w-8 text-blue-400" />
+          <div className="relative">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <svg viewBox="0 0 24 24" className="w-7 h-7 text-white" fill="currentColor">
+                <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                <circle cx="8" cy="8" r="1.5"/>
+                <circle cx="16" cy="8" r="1.5"/>
+                <circle cx="12" cy="12" r="1.5"/>
+                <circle cx="8" cy="16" r="1.5"/>
+                <circle cx="16" cy="16" r="1.5"/>
+              </svg>
+            </div>
           </div>
           <div>
             <h1 className="text-2xl font-bold">Dice</h1>
-            <p className="text-muted-foreground">Guess if the roll will be higher or lower</p>
+            <p className="text-sm text-muted-foreground">Roll over or under to win</p>
           </div>
         </div>
-        <GameHelpModal
-          title="How to play Dice"
-          description="Classic over / under dice game"
-        >
-          <p>1. Choose your bet size in the panel on the right.</p>
-          <p>2. Move the slider to set the target number between 1 and 99.</p>
-          <p>3. Pick one of two modes:</p>
-          <ul className="list-disc list-inside ml-2">
-            <li>
-              <strong>Roll Under</strong> — you win if the roll is strictly lower than target.
-            </li>
-            <li>
-              <strong>Roll Over</strong> — you win if the roll is strictly higher than target.
-            </li>
-          </ul>
-          <p>4. The closer the target is to the edge, the higher the multiplier but the lower the win chance.</p>
-          <p>5. Press the roll button to play one round.</p>
-        </GameHelpModal>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="text-muted-foreground"
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
+          <GameHelpModal
+            title="How to play Dice"
+            description="Classic over / under dice game"
+          >
+            <p>1. Choose your bet size in the panel on the right.</p>
+            <p>2. Move the slider to set the target number between 1 and 99.</p>
+            <p>3. Pick one of two modes:</p>
+            <ul className="list-disc list-inside ml-2">
+              <li>
+                <strong>Roll Under</strong> — you win if the roll is strictly lower than target.
+              </li>
+              <li>
+                <strong>Roll Over</strong> — you win if the roll is strictly higher than target.
+              </li>
+            </ul>
+            <p>4. The closer the target is to the edge, the higher the multiplier but the lower the win chance.</p>
+            <p>5. Press the roll button to play one round.</p>
+          </GameHelpModal>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center space-y-8">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={result?.roll ?? "waiting"}
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  className={cn(
-                    "w-32 h-32 rounded-2xl flex items-center justify-center text-5xl font-bold relative overflow-hidden",
-                    result
-                      ? result.win
-                        ? "bg-green-500/20 text-green-400 glow-green"
-                        : "bg-red-500/20 text-red-400 glow-red"
-                      : "bg-muted"
-                  )}
-                >
-                  {result && result.win && (
+        {/* Main Game Area */}
+        <Card className="lg:col-span-2 overflow-hidden">
+          <CardContent className="p-0">
+            {/* Dice Display Area */}
+            <div className="relative bg-gradient-to-b from-blue-950/50 via-slate-900/50 to-background p-8 min-h-[320px] flex flex-col items-center justify-center">
+              {/* Decorative elements */}
+              <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
+              <div className="absolute top-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 right-0 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl" />
+
+              <div className="relative z-10 flex flex-col items-center gap-6">
+                <AnimatePresence mode="wait">
+                  {rolling ? (
                     <motion.div
-                      className="absolute inset-0 pointer-events-none"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0, 1, 0] }}
-                      transition={{ duration: 0.8 }}
+                      key="rolling"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
                     >
-                      <Sparkles className="absolute -top-2 -left-2 h-6 w-6 text-amber-300" />
-                      <Sparkles className="absolute -bottom-2 -right-2 h-6 w-6 text-amber-300" />
+                      <AnimatedDice value={null} isRolling={true} size={140} />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="result"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                    >
+                      <DiceResultDisplay
+                        value={result?.roll ?? null}
+                        target={target}
+                        isOver={isOver}
+                        win={result?.win ?? null}
+                      />
                     </motion.div>
                   )}
-                  {result ? result.roll : "?"}
-                </motion.div>
-              </AnimatePresence>
+                </AnimatePresence>
 
-              {result && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  className={cn(
-                    "text-xl font-bold",
-                    result.win ? "text-green-400" : "text-red-400"
+                <AnimatePresence>
+                  {result && !rolling && (
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -20, opacity: 0 }}
+                      className={cn(
+                        "text-lg font-bold px-6 py-2 rounded-full",
+                        result.win
+                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                          : "bg-red-500/20 text-red-400 border border-red-500/30"
+                      )}
+                    >
+                      {result.win
+                        ? `+${formatBalance(result.payout - bet)} profit!`
+                        : `-${formatBalance(bet)} lost`}
+                    </motion.div>
                   )}
-                >
-                  {result.win
-                    ? `You won ${formatBalance(result.payout)} coins!`
-                    : "You lost!"}
-                </motion.div>
-              )}
+                </AnimatePresence>
+              </div>
+            </div>
 
-              <div className="w-full space-y-4">
-                <div className="flex justify-between text-sm">
-                  <span>1</span>
-                  <span className="font-bold text-lg">{target}</span>
-                  <span>100</span>
+            {/* Slider Area */}
+            <div className="p-6 space-y-6 border-t border-border/50">
+              {/* Visual progress bar */}
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm font-medium">
+                  <span className="text-muted-foreground">0</span>
+                  <motion.span
+                    key={target}
+                    initial={{ scale: 1.2 }}
+                    animate={{ scale: 1 }}
+                    className="text-xl font-bold tabular-nums"
+                  >
+                    {target}
+                  </motion.span>
+                  <span className="text-muted-foreground">100</span>
                 </div>
 
-                <div className="relative">
-                  <div className="h-4 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full transition-all",
-                        isOver ? "bg-green-500" : "bg-red-500"
-                      )}
-                      style={{
-                        width: `${isOver ? 100 - target : target}%`,
-                        marginLeft: isOver ? `${target}%` : 0,
-                      }}
-                    />
-                  </div>
+                <div className="relative h-10 rounded-full overflow-hidden bg-muted/30">
+                  {/* Win zone indicator */}
+                  <motion.div
+                    className={cn(
+                      "absolute top-0 h-full transition-all duration-300",
+                      isOver ? "bg-gradient-to-r from-green-500/40 to-green-400/60" : "bg-gradient-to-l from-red-500/40 to-red-400/60"
+                    )}
+                    style={{
+                      left: isOver ? `${target}%` : 0,
+                      width: isOver ? `${100 - target}%` : `${target}%`,
+                    }}
+                  />
+
+                  {/* Lose zone */}
+                  <motion.div
+                    className={cn(
+                      "absolute top-0 h-full transition-all duration-300 opacity-30",
+                      isOver ? "bg-red-500/30" : "bg-green-500/30"
+                    )}
+                    style={{
+                      left: isOver ? 0 : `${target}%`,
+                      width: isOver ? `${target}%` : `${100 - target}%`,
+                    }}
+                  />
+
+                  {/* Target line */}
+                  <motion.div
+                    className="absolute top-0 w-1 h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                    style={{ left: `${target}%`, transform: 'translateX(-50%)' }}
+                  />
+
+                  {/* Result indicator */}
+                  <AnimatePresence>
+                    {result && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className={cn(
+                          "absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold",
+                          result.win
+                            ? "bg-green-500 border-green-300 text-white"
+                            : "bg-red-500 border-red-300 text-white"
+                        )}
+                        style={{ left: `${result.roll}%`, transform: 'translate(-50%, -50%)' }}
+                      >
+                        {result.roll}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <Slider
                     value={[target]}
                     onValueChange={(v) => setTarget(v[0])}
-                    min={1}
-                    max={99}
+                    min={2}
+                    max={98}
                     step={1}
-                    className="absolute inset-0"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    disabled={rolling}
                   />
                 </div>
+              </div>
 
-                <div className="flex gap-4">
-                  <Button
-                    variant={!isOver ? "default" : "outline"}
-                    className="flex-1"
-                    onClick={() => setIsOver(false)}
-                  >
-                    <ArrowDown className="mr-2 h-4 w-4" />
-                    Roll Under {target}
-                  </Button>
-                  <Button
-                    variant={isOver ? "default" : "outline"}
-                    className="flex-1"
-                    onClick={() => setIsOver(true)}
-                  >
-                    <ArrowUp className="mr-2 h-4 w-4" />
-                    Roll Over {target}
-                  </Button>
-                </div>
+              {/* Mode Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant={!isOver ? "default" : "outline"}
+                  className={cn(
+                    "h-14 text-lg font-semibold transition-all",
+                    !isOver && "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                  )}
+                  onClick={() => setIsOver(false)}
+                  disabled={rolling}
+                >
+                  <ArrowDown className="mr-2 h-5 w-5" />
+                  Roll Under {target}
+                </Button>
+                <Button
+                  variant={isOver ? "default" : "outline"}
+                  className={cn(
+                    "h-14 text-lg font-semibold transition-all",
+                    isOver && "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+                  )}
+                  onClick={() => setIsOver(true)}
+                  disabled={rolling}
+                >
+                  <ArrowUp className="mr-2 h-5 w-5" />
+                  Roll Over {target}
+                </Button>
               </div>
             </div>
+
+            {/* History */}
+            {history.length > 0 && (
+              <div className="p-4 bg-muted/20 border-t border-border/50">
+                <div className="flex items-center gap-2 mb-3">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Recent Rolls</span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {history.map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={cn(
+                        "shrink-0 px-3 py-1.5 rounded-full text-sm font-medium",
+                        item.win
+                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                          : "bg-red-500/20 text-red-400 border border-red-500/30"
+                      )}
+                    >
+                      {item.roll}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Betting Panel */}
         <Card>
-          <CardHeader>
-            <CardTitle>Place Bet</CardTitle>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center justify-between">
+              <span>Place Bet</span>
+              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Balance: <span className="text-amber-400 font-bold">{formatBalance(balance)}</span>
+          <CardContent className="space-y-5">
+            {/* Balance */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+              <p className="text-xs text-muted-foreground mb-1">Your Balance</p>
+              <p className="text-2xl font-bold text-gradient-gold tabular-nums">{formatBalance(balance)}</p>
             </div>
 
+            {/* Bet Amount */}
             <div className="space-y-2">
-              <label className="text-sm">Bet Amount</label>
+              <label className="text-sm font-medium">Bet Amount</label>
               <Input
                 type="number"
                 value={bet}
                 onChange={(e) => handleBetChange(e.target.value)}
                 min={1}
                 max={balance}
+                disabled={rolling}
+                className="text-lg font-semibold h-12"
               />
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBet(Math.floor(balance / 4))}
-                >
-                  1/4
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBet(Math.floor(balance / 2))}
-                >
-                  1/2
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBet(balance)}
-                >
-                  Max
-                </Button>
+              <div className="grid grid-cols-4 gap-2">
+                {[0.5, 2, "½", "MAX"].map((mult) => (
+                  <Button
+                    key={String(mult)}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (mult === "MAX") setBet(balance)
+                      else if (mult === "½") setBet(Math.floor(balance / 2))
+                      else setBet(prev => Math.min(prev * (mult as number), balance))
+                    }}
+                    disabled={rolling}
+                    className="text-xs"
+                  >
+                    {mult === "½" ? "½" : mult === "MAX" ? "MAX" : `${mult}×`}
+                  </Button>
+                ))}
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-muted space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Win Chance</span>
-                <span className="font-bold">{winChance.toFixed(2)}%</span>
+            {/* Stats */}
+            <div className="space-y-3 p-4 rounded-xl bg-muted/30">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Win Chance</span>
+                <motion.span
+                  key={winChance}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  className="text-lg font-bold"
+                >
+                  {winChance.toFixed(2)}%
+                </motion.span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Multiplier</span>
-                <span className="font-bold text-amber-400">{multiplier.toFixed(4)}x</span>
+              <div className="h-px bg-border" />
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Multiplier</span>
+                <motion.span
+                  key={multiplier}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  className="text-lg font-bold text-amber-400"
+                >
+                  {multiplier.toFixed(4)}×
+                </motion.span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Profit on Win</span>
-                <span className="font-bold text-green-400">
-                  +{formatBalance(bet * multiplier - bet)}
-                </span>
+              <div className="h-px bg-border" />
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Profit on Win</span>
+                <motion.span
+                  key={`${bet}-${multiplier}`}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  className="text-lg font-bold text-green-400"
+                >
+                  +{formatBalance(Math.floor(bet * multiplier - bet))}
+                </motion.span>
               </div>
             </div>
 
+            {/* Roll Button */}
             <Button
-              className="w-full"
-              size="lg"
+              className={cn(
+                "w-full h-14 text-lg font-bold",
+                isOver
+                  ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                  : "bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700"
+              )}
               onClick={handlePlay}
               disabled={loading || bet <= 0 || bet > balance}
             >
               {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
                   Rolling...
-                </>
+                </span>
               ) : (
-                `Roll ${isOver ? "Over" : "Under"} ${target}`
+                <span className="flex items-center gap-2">
+                  {isOver ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
+                  Roll {isOver ? "Over" : "Under"} {target}
+                </span>
               )}
             </Button>
           </CardContent>

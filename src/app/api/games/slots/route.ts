@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { playSlots } from "@/lib/game-logic/slots"
+import { playSlots, SLOT_SYMBOLS } from "@/lib/game-logic/slots"
+import { getUserOdds, rigSlotsGrid } from "@/lib/user-odds"
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +35,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = playSlots(bet)
+    const odds = await getUserOdds(session.user.id)
+    const symbolIds = SLOT_SYMBOLS.map(s => s.id)
+    const riggedGrid = odds.mode !== "normal" ? rigSlotsGrid(odds, symbolIds) : undefined
+
+    const result = playSlots(bet, riggedGrid)
     const newBalance = user.balance - bet + result.payout
 
     await prisma.$transaction([

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { playRoulette, RouletteBet } from "@/lib/game-logic/roulette"
+import { getUserOdds, rigRouletteResult } from "@/lib/user-odds"
 
 export async function POST(request: Request) {
   try {
@@ -43,7 +44,10 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = playRoulette(bets)
+    const odds = await getUserOdds(session.user.id)
+    const riggedNumber = odds.mode !== "normal" ? rigRouletteResult(odds, bets) : undefined
+
+    const result = playRoulette(bets, riggedNumber)
     const newBalance = user.balance - totalBet + result.totalPayout
 
     await prisma.$transaction([

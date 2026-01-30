@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { playDice, calculateDiceMultiplier } from "@/lib/game-logic/dice"
+import { getUserOdds, rigDiceRoll } from "@/lib/user-odds"
 
 export async function POST(request: Request) {
   try {
@@ -41,7 +42,10 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = playDice(bet, target, isOver)
+    const odds = await getUserOdds(session.user.id)
+    const riggedRoll = odds.mode !== "normal" ? rigDiceRoll(odds, target, isOver) : undefined
+
+    const result = playDice(bet, target, isOver, riggedRoll)
     const multiplier = calculateDiceMultiplier(target, isOver)
 
     const newBalance = user.balance - bet + result.payout

@@ -16,9 +16,10 @@ export function calculateDiceMultiplier(target: number, isOver: boolean): number
 export function playDice(
   bet: number,
   target: number,
-  isOver: boolean
+  isOver: boolean,
+  riggedRoll?: number
 ): DiceResult {
-  const roll = Math.floor(Math.random() * 100) + 1
+  const roll = riggedRoll ?? Math.floor(Math.random() * 100) + 1
 
   const win = isOver ? roll > target : roll < target
   const multiplier = calculateDiceMultiplier(target, isOver)

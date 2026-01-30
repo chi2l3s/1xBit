@@ -76,8 +76,8 @@ export function spinRoulette(): number {
   return Math.floor(Math.random() * 37)
 }
 
-export function playRoulette(bets: RouletteBet[]): RouletteResult {
-  const number = spinRoulette()
+export function playRoulette(bets: RouletteBet[], riggedNumber?: number): RouletteResult {
+  const number = riggedNumber ?? spinRoulette()
   const color = getNumberColor(number)
 
   const betResults = bets.map((bet) => {

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import {
   Dices,
@@ -15,7 +16,8 @@ import {
   Flame,
   Zap,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Shield
 } from "lucide-react"
 import { motion } from "framer-motion"
 
@@ -37,6 +39,18 @@ const games = [
 
 export function Sidebar({ isOpen, onClose, collapsed = false, onToggleCollapsed }: SidebarProps) {
   const pathname = usePathname()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/user")
+      .then(res => res.json())
+      .then(data => {
+        if (data.role === "admin") {
+          setIsAdmin(true)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <>
@@ -101,6 +115,28 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onToggleCollapsed 
                 </div>
                 {!collapsed && <span className="font-medium">Home</span>}
               </Link>
+
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                    pathname === "/admin"
+                      ? "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-red-500/25"
+                      : "hover:bg-muted/50",
+                    collapsed && "px-3 justify-center"
+                  )}
+                >
+                  <div className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center",
+                    pathname === "/admin" ? "bg-white/20" : "bg-gradient-to-br from-red-500 to-rose-600"
+                  )}>
+                    <Shield className="h-4 w-4 text-white" />
+                  </div>
+                  {!collapsed && <span className="font-medium">Admin Panel</span>}
+                </Link>
+              )}
 
               <div className="pt-6 pb-3">
                 <div className={cn("flex items-center gap-2 px-4", collapsed && "px-2 justify-center")}>

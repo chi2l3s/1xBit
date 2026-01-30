@@ -7,12 +7,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn, formatBalance } from "@/lib/utils"
-import { getCardDisplay, isRedSuit, PAYTABLE, Card as GameCard } from "@/lib/game-logic/poker"
-import { Target, Loader2 } from "lucide-react"
+import { PAYTABLE, Card as GameCard } from "@/lib/game-logic/poker"
+import { Loader2, Volume2, VolumeX, Trophy, Sparkles, History } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
+import { PlayingCard, CardData, Suit } from "./cards/PlayingCard"
 
 type Phase = "betting" | "draw" | "complete"
+
+interface HistoryItem {
+  rank: string
+  win: boolean
+  payout: number
+}
+
+// Convert game card to our CardData format
+function toCardData(card: GameCard): CardData {
+  const suitMap: Record<string, Suit> = {
+    hearts: "hearts",
+    diamonds: "diamonds",
+    clubs: "clubs",
+    spades: "spades"
+  }
+  return {
+    suit: suitMap[card.suit] || "spades",
+    rank: card.rank as CardData["rank"]
+  }
+}
 
 export function PokerGame() {
   const { data: session, status } = useSession()
@@ -20,6 +41,7 @@ export function PokerGame() {
   const [balance, setBalance] = useState<number>(0)
   const [bet, setBet] = useState<number>(100)
   const [loading, setLoading] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(true)
   const [phase, setPhase] = useState<Phase>("betting")
   const [hand, setHand] = useState<GameCard[]>([])
   const [heldCards, setHeldCards] = useState<Set<number>>(new Set())
@@ -29,6 +51,7 @@ export function PokerGame() {
     payout: number
     win: boolean
   } | null>(null)
+  const [history, setHistory] = useState<HistoryItem[]>([])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -98,13 +121,19 @@ export function PokerGame() {
       if (res.ok) {
         setHand(data.hand)
         setPhase("complete")
-        setResult({
+        const newResult = {
           rank: data.rank,
           multiplier: data.multiplier,
           payout: data.payout,
           win: data.win,
-        })
+        }
+        setResult(newResult)
         setBalance(data.newBalance)
+        setHistory(prev => [{
+          rank: data.rank,
+          win: data.win,
+          payout: data.payout
+        }, ...prev.slice(0, 9)])
       }
     } catch (error) {
       console.error("Game error:", error)
@@ -134,38 +163,6 @@ export function PokerGame() {
     setResult(null)
   }
 
-  const renderCard = (card: GameCard, index: number) => {
-    const isHeld = heldCards.has(index)
-
-    return (
-      <motion.div
-        key={index}
-        initial={{ scale: 0, rotateY: 180 }}
-        animate={{ scale: 1, rotateY: 0 }}
-        transition={{ delay: index * 0.1 }}
-        className="relative"
-      >
-        <button
-          onClick={() => toggleHold(index)}
-          disabled={phase !== "draw"}
-          className={cn(
-            "w-20 h-28 bg-white rounded-lg shadow-lg flex flex-col items-center justify-center text-2xl font-bold transition-all",
-            isRedSuit(card.suit) ? "text-red-600" : "text-gray-900",
-            phase === "draw" && "hover:ring-2 hover:ring-amber-400 cursor-pointer",
-            isHeld && "ring-4 ring-amber-400 -translate-y-2"
-          )}
-        >
-          {getCardDisplay(card)}
-        </button>
-        {isHeld && (
-          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-amber-400">
-            HOLD
-          </div>
-        )}
-      </motion.div>
-    )
-  }
-
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center h-64">
@@ -175,90 +172,175 @@ export function PokerGame() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-3">
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-lg bg-pink-500/20">
-            <Target className="h-8 w-8 text-pink-400" />
+          <div className="relative">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg shadow-pink-500/25">
+              <span className="text-2xl">🎴</span>
+            </div>
           </div>
           <div>
             <h1 className="text-2xl font-bold">Video Poker</h1>
-            <p className="text-muted-foreground">Jacks or Better</p>
+            <p className="text-sm text-muted-foreground">Jacks or Better</p>
           </div>
         </div>
-        <GameHelpModal
-          title="How to play Video Poker"
-          description="Jacks or Better, 5-card draw"
-        >
-          <p>1. Choose your bet amount and press <strong>Deal</strong>.</p>
-          <p>2. You receive 5 cards; click any card to mark it as HOLD.</p>
-          <p>3. Press <strong>Draw</strong> to replace non-held cards with new ones.</p>
-          <p>4. Final 5-card hand is evaluated according to the paytable on the right.</p>
-          <p>5. Minimum paying hand is usually Jacks or Better; stronger hands pay more.</p>
-          <p>6. After payout you can start a new game with <strong>New Game</strong>.</p>
-        </GameHelpModal>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="text-muted-foreground"
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
+          <GameHelpModal
+            title="How to play Video Poker"
+            description="Jacks or Better, 5-card draw"
+          >
+            <p>1. Choose your bet amount and press <strong>Deal</strong>.</p>
+            <p>2. You receive 5 cards; click any card to mark it as HOLD.</p>
+            <p>3. Press <strong>Draw</strong> to replace non-held cards with new ones.</p>
+            <p>4. Final 5-card hand is evaluated according to the paytable.</p>
+            <p>5. Minimum paying hand is Jacks or Better; stronger hands pay more.</p>
+            <p>6. After payout you can start a new game with <strong>New Game</strong>.</p>
+          </GameHelpModal>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardContent className="p-6">
-            <div className="bg-gradient-to-b from-pink-900/50 to-pink-950/50 rounded-xl p-6 border-4 border-pink-500/30">
-              <div className="flex justify-center gap-3 min-h-[140px] items-center">
+        {/* Main Game Area */}
+        <Card className="lg:col-span-2 overflow-hidden">
+          <CardContent className="p-0">
+            {/* Game Table */}
+            <div className="relative bg-gradient-to-b from-pink-900/50 via-rose-950/50 to-background p-8 min-h-[350px]">
+              {/* Decorative elements */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(236,72,153,0.1)_0%,transparent_50%)]" />
+
+              {/* Cards */}
+              <div className="relative flex justify-center gap-3 min-h-[160px] items-center">
                 {hand.length > 0 ? (
                   <AnimatePresence>
-                    {hand.map((card, i) => renderCard(card, i))}
+                    {hand.map((card, i) => (
+                      <PlayingCard
+                        key={i}
+                        card={toCardData(card)}
+                        index={i}
+                        isHeld={heldCards.has(i)}
+                        onClick={() => toggleHold(i)}
+                        disabled={phase !== "draw"}
+                        size="lg"
+                      />
+                    ))}
                   </AnimatePresence>
                 ) : (
-                  <div className="text-muted-foreground">
-                    Place your bet and deal to start
+                  <div className="flex gap-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-[100px] h-[140px] rounded-xl border-2 border-dashed border-pink-500/30 bg-pink-500/5 flex items-center justify-center"
+                      >
+                        <span className="text-4xl text-pink-500/20">?</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
+              {/* Instructions */}
               {phase === "draw" && (
-                <p className="text-center mt-8 text-sm text-muted-foreground">
-                  Click cards to hold, then click Draw
-                </p>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center mt-6 text-sm text-muted-foreground"
+                >
+                  Click cards to hold, then press Draw
+                </motion.p>
               )}
 
+              {/* Result Display */}
               <AnimatePresence>
                 {result && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={cn(
-                      "mt-6 p-4 rounded-lg text-center",
+                      "mt-6 p-5 rounded-xl text-center",
                       result.win
-                        ? "bg-green-500/20 text-green-400"
-                        : "bg-muted text-muted-foreground"
+                        ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30"
+                        : "bg-muted/50 border border-border"
                     )}
                   >
-                    <p className="text-xl font-bold">{result.rank}</p>
+                    <p className={cn(
+                      "text-2xl font-black",
+                      result.win ? "text-green-400" : "text-muted-foreground"
+                    )}>
+                      {result.rank}
+                    </p>
                     {result.win && (
-                      <p className="text-lg">
-                        {result.multiplier}x - Won {formatBalance(result.payout)} coins!
-                      </p>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="mt-2 flex items-center justify-center gap-2"
+                      >
+                        <Sparkles className="w-5 h-5 text-amber-400" />
+                        <span className="text-xl font-bold text-gradient-gold">
+                          {result.multiplier}× - Won {formatBalance(result.payout)}!
+                        </span>
+                        <Sparkles className="w-5 h-5 text-amber-400" />
+                      </motion.div>
                     )}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
+
+            {/* History */}
+            {history.length > 0 && (
+              <div className="p-4 bg-muted/20 border-t border-border/50">
+                <div className="flex items-center gap-2 mb-3">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Recent Hands</span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {history.map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={cn(
+                        "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium",
+                        item.win
+                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                          : "bg-muted text-muted-foreground border border-border"
+                      )}
+                    >
+                      {item.win ? `${item.rank}` : "No Win"}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Controls */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle>Controls</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Balance: <span className="text-amber-400 font-bold">{formatBalance(balance)}</span>
+          <CardContent className="space-y-5">
+            {/* Balance */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+              <p className="text-xs text-muted-foreground mb-1">Your Balance</p>
+              <p className="text-2xl font-bold text-gradient-gold tabular-nums">{formatBalance(balance)}</p>
             </div>
 
             {phase === "betting" && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm">Bet Amount</label>
+                  <label className="text-sm font-medium">Bet Amount</label>
                   <Input
                     type="number"
                     value={bet}
@@ -266,74 +348,92 @@ export function PokerGame() {
                     min={1}
                     max={balance}
                     disabled={loading}
+                    className="text-lg font-semibold h-12"
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setBet(Math.floor(balance / 4))}
-                    >
-                      1/4
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setBet(Math.floor(balance / 2))}
-                    >
-                      1/2
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setBet(balance)}
-                    >
-                      Max
-                    </Button>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[10, 50, 100, "MAX"].map((val) => (
+                      <Button
+                        key={String(val)}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (val === "MAX") setBet(balance)
+                          else setBet(val as number)
+                        }}
+                        disabled={loading}
+                        className="text-xs"
+                      >
+                        {val === "MAX" ? "MAX" : val}
+                      </Button>
+                    ))}
                   </div>
                 </div>
 
                 <Button
-                  className="w-full"
-                  size="lg"
-                  variant="gold"
+                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700"
                   onClick={deal}
                   disabled={loading || bet <= 0 || bet > balance}
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Deal"}
+                  {loading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span className="mr-2">🎴</span>
+                      Deal
+                    </>
+                  )}
                 </Button>
               </>
             )}
 
             {phase === "draw" && (
               <Button
-                className="w-full"
-                size="lg"
-                variant="gold"
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700"
                 onClick={draw}
                 disabled={loading}
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Draw"}
+                {loading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  "Draw"
+                )}
               </Button>
             )}
 
             {phase === "complete" && (
               <Button
-                className="w-full"
-                size="lg"
+                className="w-full h-14 text-lg font-bold"
                 onClick={newGame}
               >
                 New Game
               </Button>
             )}
 
-            <div className="p-4 rounded-lg bg-muted space-y-1 text-xs">
-              <p className="font-medium mb-2">Paytable:</p>
-              {PAYTABLE.map((p) => (
-                <div key={p.rank} className="flex justify-between">
-                  <span>{p.rank}</span>
-                  <span className="text-amber-400">{p.multiplier}x</span>
-                </div>
-              ))}
+            {/* Paytable */}
+            <div className="p-4 rounded-xl bg-muted/30 space-y-2">
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-amber-400" />
+                Paytable
+              </p>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {PAYTABLE.map((p) => (
+                  <div
+                    key={p.rank}
+                    className={cn(
+                      "flex justify-between text-sm py-1 px-2 rounded",
+                      result?.rank === p.rank && result?.win && "bg-green-500/20"
+                    )}
+                  >
+                    <span className={cn(
+                      "text-muted-foreground",
+                      result?.rank === p.rank && result?.win && "text-green-400 font-medium"
+                    )}>
+                      {p.rank}
+                    </span>
+                    <span className="text-amber-400 font-bold">{p.multiplier}×</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
