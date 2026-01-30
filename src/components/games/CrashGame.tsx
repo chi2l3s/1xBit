@@ -11,6 +11,7 @@ import { Loader2, Users, History } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Rocket } from "./crash/Rocket"
 import { Explosion } from "./crash/Explosion"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 type GameState = "waiting" | "playing" | "crashed" | "cashed_out"
 
@@ -22,6 +23,7 @@ interface HistoryItem {
 export function CrashGame() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t } = usePreferences()
   const [balance, setBalance] = useState<number>(0)
   const [bet, setBet] = useState<number>(100)
   const [autoCashOut, setAutoCashOut] = useState<number>(2.0)
@@ -108,11 +110,7 @@ export function CrashGame() {
       ctx.lineCap = "round"
       ctx.lineJoin = "round"
 
-      // Create gradient
-      const gradient = ctx.createLinearGradient(0, rect.height, rect.width, 0)
-      gradient.addColorStop(0, gameState === "crashed" ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)")
-      gradient.addColorStop(1, gameState === "crashed" ? "#ef4444" : "#10b981")
-      ctx.strokeStyle = gradient
+      ctx.strokeStyle = gameState === "crashed" ? "#f87171" : "#34d399"
 
       ctx.moveTo(trail[0].x * rect.width, rect.height - trail[0].y * rect.height)
       for (let i = 1; i < trail.length; i++) {
@@ -124,10 +122,7 @@ export function CrashGame() {
       ctx.lineTo(trail[trail.length - 1].x * rect.width, rect.height)
       ctx.lineTo(0, rect.height)
       ctx.closePath()
-      const fillGradient = ctx.createLinearGradient(0, 0, 0, rect.height)
-      fillGradient.addColorStop(0, gameState === "crashed" ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)")
-      fillGradient.addColorStop(1, "rgba(0, 0, 0, 0)")
-      ctx.fillStyle = fillGradient
+      ctx.fillStyle = gameState === "crashed" ? "rgba(248, 113, 113, 0.2)" : "rgba(52, 211, 153, 0.2)"
       ctx.fill()
     }
   }, [trail, gameState])
@@ -245,19 +240,19 @@ export function CrashGame() {
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600">
+          <div className="p-3 rounded-xl bg-emerald-500/20">
             <div className="scale-[0.6] -m-2">
               <Rocket flame={false} glowClassName="bg-emerald-500/45" />
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Crash</h1>
-            <p className="text-muted-foreground text-sm">Cash out before the rocket explodes!</p>
+            <h1 className="text-2xl font-bold">{t("games.crash.title")}</h1>
+            <p className="text-muted-foreground text-sm">{t("games.crash.subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="h-4 w-4" />
-          <span>2,847 playing</span>
+          <span>2,847 {t("common.playersOnline")}</span>
         </div>
       </div>
 
@@ -265,7 +260,7 @@ export function CrashGame() {
         {/* Main Game Area */}
         <Card className="lg:col-span-3 overflow-hidden">
           <CardContent className="p-0">
-            <div className="relative h-80 md:h-96 bg-gradient-to-b from-muted/50 to-background overflow-hidden">
+            <div className="relative h-80 md:h-96 bg-muted/20 overflow-hidden">
               {/* Canvas for graph */}
               <canvas
                 ref={canvasRef}
@@ -289,7 +284,7 @@ export function CrashGame() {
                     {currentMultiplier.toFixed(2)}x
                   </div>
                   {gameState === "waiting" && (
-                    <p className="text-muted-foreground mt-2">Place your bet to start</p>
+                    <p className="text-muted-foreground mt-2">{t("games.crash.placeBetToStart")}</p>
                   )}
                 </motion.div>
               </div>
@@ -381,7 +376,7 @@ export function CrashGame() {
                       animate={{ y: 0, opacity: 1 }}
                       className="text-red-500 font-bold text-2xl flex items-center gap-2"
                     >
-                      <span>CRASHED @ {crashPoint?.toFixed(2)}x</span>
+                      <span>{t("games.crash.crashed")} @ {crashPoint?.toFixed(2)}x</span>
                     </motion.div>
                   </motion.div>
                 )}
@@ -402,7 +397,7 @@ export function CrashGame() {
                       className="text-center"
                     >
                       <div className="text-green-500 font-bold text-2xl">
-                        CASHED OUT @ {result?.multiplier}x
+                        {t("games.crash.cashedOut")} @ {result?.multiplier}x
                       </div>
                       <div className="text-green-400 text-lg">
                         +{formatBalance(result?.payout || 0)}
@@ -440,16 +435,16 @@ export function CrashGame() {
         {/* Betting Panel */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Place Bet</CardTitle>
+            <CardTitle className="text-lg">{t("games.betPanel.title")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-3 rounded-xl bg-muted/50 text-center">
-              <p className="text-xs text-muted-foreground">Balance</p>
-              <p className="text-xl font-bold text-gradient-gold">{formatBalance(balance)}</p>
+              <p className="text-xs text-muted-foreground">{t("common.balance")}</p>
+              <p className="text-xl font-bold text-foreground">{formatBalance(balance)}</p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Bet Amount</label>
+              <label className="text-sm text-muted-foreground">{t("games.bonus.bet")}</label>
               <Input
                 type="number"
                 value={bet}
@@ -479,7 +474,7 @@ export function CrashGame() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Auto Cash Out</label>
+              <label className="text-sm text-muted-foreground">{t("games.bonus.autoCashout")}</label>
               <Input
                 type="number"
                 value={autoCashOut}
@@ -505,13 +500,13 @@ export function CrashGame() {
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 space-y-1">
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Target</span>
+                <span className="text-muted-foreground">{t("games.bonus.target")}</span>
                 <span className="font-bold text-green-400">{autoCashOut.toFixed(2)}x</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Potential Win</span>
+                <span className="text-muted-foreground">{t("games.bonus.potentialWin")}</span>
                 <span className="font-bold text-green-400">
                   {formatBalance(bet * autoCashOut)}
                 </span>
@@ -522,8 +517,8 @@ export function CrashGame() {
               className={cn(
                 "w-full h-12 text-lg font-bold",
                 gameState === "playing"
-                  ? "bg-gradient-to-r from-orange-500 to-red-500"
-                  : "bg-gradient-to-r from-green-500 to-emerald-600"
+                  ? "bg-amber-500 text-white hover:bg-amber-600"
+                  : "bg-emerald-500 text-white hover:bg-emerald-600"
               )}
               onClick={startGame}
               disabled={gameState === "playing" || bet <= 0 || bet > balance}
@@ -531,14 +526,14 @@ export function CrashGame() {
               {gameState === "playing" ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Flying...
+                  {t("games.crash.inFlight")}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <span className="inline-flex scale-[0.6] -m-2">
                     <Rocket flame={false} />
                   </span>
-                  Start Launch
+                  {t("games.crash.start")}
                 </span>
               )}
             </Button>
