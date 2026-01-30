@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 interface AnimatedDiceProps {
   value: number | null
@@ -26,7 +27,7 @@ function DiceFace({ value, className }: { value: number; className?: string }) {
   return (
     <div className={cn(
       "absolute inset-0 rounded-xl border-2 border-white/20 flex items-center justify-center",
-      "bg-gradient-to-br from-white via-gray-100 to-gray-200",
+      "bg-white",
       "shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-2px_4px_rgba(0,0,0,0.1)]",
       className
     )}>
@@ -203,6 +204,8 @@ interface DiceResultDisplayProps {
 }
 
 export function DiceResultDisplay({ value, target, isOver, win }: DiceResultDisplayProps) {
+  const { t } = usePreferences()
+
   return (
     <div className="relative">
       <motion.div
@@ -213,8 +216,8 @@ export function DiceResultDisplay({ value, target, isOver, win }: DiceResultDisp
           "w-40 h-40 rounded-3xl flex items-center justify-center text-7xl font-black",
           "shadow-2xl border-4",
           win === null && "bg-muted border-border text-foreground",
-          win === true && "bg-gradient-to-br from-green-500 to-emerald-600 border-green-400 text-white glow-green",
-          win === false && "bg-gradient-to-br from-red-500 to-rose-600 border-red-400 text-white glow-red"
+          win === true && "bg-emerald-500 border-emerald-400 text-white glow-green",
+          win === false && "bg-rose-500 border-rose-400 text-white glow-red"
         )}
       >
         {value ?? "?"}
@@ -229,7 +232,7 @@ export function DiceResultDisplay({ value, target, isOver, win }: DiceResultDisp
             win ? "bg-green-400 text-green-900" : "bg-red-400 text-red-900"
           )}
         >
-          {win ? "WIN!" : "LOSE"}
+          {win ? t("common.win") : t("common.loss")}
         </motion.div>
       )}
     </div>

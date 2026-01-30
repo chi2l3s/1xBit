@@ -18,6 +18,7 @@ import {
   Save,
   RotateCcw,
 } from "lucide-react"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 interface UserOdds {
   mode: string
@@ -39,16 +40,17 @@ interface User {
 
 type OddsMode = "normal" | "always_win" | "always_lose" | "custom"
 
-const MODE_CONFIG: Record<OddsMode, { label: string; icon: React.ReactNode; color: string }> = {
-  normal: { label: "Normal", icon: <Minus className="w-4 h-4" />, color: "bg-gray-500" },
-  always_win: { label: "Always Win", icon: <TrendingUp className="w-4 h-4" />, color: "bg-green-500" },
-  always_lose: { label: "Always Lose", icon: <TrendingDown className="w-4 h-4" />, color: "bg-red-500" },
-  custom: { label: "Custom %", icon: <Sparkles className="w-4 h-4" />, color: "bg-purple-500" },
+const MODE_CONFIG: Record<OddsMode, { labelKey: "admin.mode.normal" | "admin.mode.alwaysWin" | "admin.mode.alwaysLose" | "admin.mode.custom"; icon: React.ReactNode; color: string }> = {
+  normal: { labelKey: "admin.mode.normal", icon: <Minus className="w-4 h-4" />, color: "bg-gray-500" },
+  always_win: { labelKey: "admin.mode.alwaysWin", icon: <TrendingUp className="w-4 h-4" />, color: "bg-green-500" },
+  always_lose: { labelKey: "admin.mode.alwaysLose", icon: <TrendingDown className="w-4 h-4" />, color: "bg-red-500" },
+  custom: { labelKey: "admin.mode.custom", icon: <Sparkles className="w-4 h-4" />, color: "bg-purple-500" },
 }
 
 export default function AdminPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t } = usePreferences()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [editingUser, setEditingUser] = useState<string | null>(null)
@@ -152,12 +154,12 @@ export default function AdminPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/25">
-          <Shield className="w-7 h-7 text-white" />
+        <div className="w-14 h-14 rounded-2xl bg-rose-500/20 flex items-center justify-center shadow-lg shadow-black/20">
+          <Shield className="w-7 h-7 text-rose-200" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Admin Panel</h1>
-          <p className="text-sm text-muted-foreground">Manage users and their odds</p>
+          <h1 className="text-2xl font-bold">{t("admin.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("admin.subtitle")}</p>
         </div>
       </div>
 
@@ -165,7 +167,7 @@ export default function AdminPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Users ({users.length})
+            {t("admin.users")} ({users.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -177,7 +179,7 @@ export default function AdminPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-bold">
+                    <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-200 font-bold">
                       {user.username[0].toUpperCase()}
                     </div>
                     <div>
@@ -193,11 +195,11 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-gradient-gold">
+                    <p className="text-lg font-bold text-amber-300">
                       {formatBalance(user.balance)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {user._count.gameHistory} games played
+                      {user._count.gameHistory} {t("admin.gamesPlayed")}
                     </p>
                   </div>
                 </div>
@@ -206,7 +208,7 @@ export default function AdminPage() {
                   <div className="p-4 rounded-lg bg-background/50 border border-border space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Balance</label>
+                        <label className="text-sm font-medium mb-2 block">{t("admin.balance")}</label>
                         <Input
                           type="number"
                           value={editValues.balance}
@@ -220,7 +222,7 @@ export default function AdminPage() {
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Win Rate %</label>
+                        <label className="text-sm font-medium mb-2 block">{t("admin.winRate")}</label>
                         <Input
                           type="number"
                           min={0}
@@ -239,7 +241,7 @@ export default function AdminPage() {
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Odds Mode</label>
+                      <label className="text-sm font-medium mb-2 block">{t("admin.oddsMode")}</label>
                       <div className="grid grid-cols-4 gap-2">
                         {(Object.keys(MODE_CONFIG) as OddsMode[]).map((mode) => {
                           const config = MODE_CONFIG[mode]
@@ -256,7 +258,7 @@ export default function AdminPage() {
                               }`}
                             >
                               {config.icon}
-                              <span className="text-xs font-medium">{config.label}</span>
+                              <span className="text-xs font-medium">{t(config.labelKey)}</span>
                             </button>
                           )
                         })}
@@ -265,7 +267,7 @@ export default function AdminPage() {
 
                     <div className="flex gap-2 justify-end">
                       <Button variant="outline" onClick={cancelEditing} disabled={saving}>
-                        Cancel
+                        {t("admin.cancel")}
                       </Button>
                       <Button
                         onClick={() => saveChanges(user.id)}
@@ -277,26 +279,26 @@ export default function AdminPage() {
                         ) : (
                           <Save className="w-4 h-4 mr-2" />
                         )}
-                        Save
+                        {t("admin.save")}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Current mode:</span>
+                  <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">{t("admin.currentMode")}</span>
                       {user.odds ? (
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-bold text-white ${
                             MODE_CONFIG[user.odds.mode as OddsMode]?.color || "bg-gray-500"
                           }`}
                         >
-                          {MODE_CONFIG[user.odds.mode as OddsMode]?.label || user.odds.mode}
+                          {t(MODE_CONFIG[user.odds.mode as OddsMode]?.labelKey || "admin.mode.normal")}
                           {user.odds.mode === "custom" && ` (${user.odds.winRate}%)`}
                         </span>
                       ) : (
                         <span className="px-3 py-1 rounded-full text-xs font-bold text-white bg-gray-500">
-                          Normal
+                          {t("admin.mode.normal")}
                         </span>
                       )}
                     </div>
@@ -309,11 +311,11 @@ export default function AdminPage() {
                           disabled={saving}
                         >
                           <RotateCcw className="w-4 h-4 mr-1" />
-                          Reset
+                          {t("admin.reset")}
                         </Button>
                       )}
                       <Button size="sm" onClick={() => startEditing(user)}>
-                        Edit Odds
+                        {t("admin.adjustBalance")}
                       </Button>
                     </div>
                   </div>

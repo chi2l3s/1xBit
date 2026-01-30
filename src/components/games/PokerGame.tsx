@@ -12,6 +12,7 @@ import { Loader2, Volume2, VolumeX, Trophy, Sparkles, History } from "lucide-rea
 import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { PlayingCard, CardData, Suit } from "./cards/PlayingCard"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 type Phase = "betting" | "draw" | "complete"
 
@@ -38,6 +39,7 @@ function toCardData(card: GameCard): CardData {
 export function PokerGame() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t } = usePreferences()
   const [balance, setBalance] = useState<number>(0)
   const [bet, setBet] = useState<number>(100)
   const [loading, setLoading] = useState(false)
@@ -163,6 +165,35 @@ export function PokerGame() {
     setResult(null)
   }
 
+  const getRankLabel = (rank: string) => {
+    switch (rank) {
+      case "Royal Flush":
+        return t("games.poker.rank.royalFlush")
+      case "Straight Flush":
+        return t("games.poker.rank.straightFlush")
+      case "Four of a Kind":
+        return t("games.poker.rank.fourKind")
+      case "Full House":
+        return t("games.poker.rank.fullHouse")
+      case "Flush":
+        return t("games.poker.rank.flush")
+      case "Straight":
+        return t("games.poker.rank.straight")
+      case "Three of a Kind":
+        return t("games.poker.rank.threeKind")
+      case "Two Pair":
+        return t("games.poker.rank.twoPair")
+      case "Jacks or Better":
+        return t("games.poker.rank.jacksBetter")
+      case "High Card":
+        return t("games.poker.rank.highCard")
+      case "Low Pair":
+        return t("games.poker.rank.lowPair")
+      default:
+        return rank
+    }
+  }
+
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center h-64">
@@ -177,13 +208,13 @@ export function PokerGame() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg shadow-pink-500/25">
+            <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center shadow-lg shadow-black/20">
               <span className="text-2xl">🎴</span>
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Video Poker</h1>
-            <p className="text-sm text-muted-foreground">Jacks or Better</p>
+            <h1 className="text-2xl font-bold">{t("games.poker.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("games.poker.subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -196,15 +227,13 @@ export function PokerGame() {
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
           <GameHelpModal
-            title="How to play Video Poker"
-            description="Jacks or Better, 5-card draw"
+            title={t("games.poker.helpTitle")}
+            description={t("games.poker.helpDesc")}
           >
-            <p>1. Choose your bet amount and press <strong>Deal</strong>.</p>
-            <p>2. You receive 5 cards; click any card to mark it as HOLD.</p>
-            <p>3. Press <strong>Draw</strong> to replace non-held cards with new ones.</p>
-            <p>4. Final 5-card hand is evaluated according to the paytable.</p>
-            <p>5. Minimum paying hand is Jacks or Better; stronger hands pay more.</p>
-            <p>6. After payout you can start a new game with <strong>New Game</strong>.</p>
+            <p>1. {t("games.poker.helpStep1")}</p>
+            <p>2. {t("games.poker.helpStep2")}</p>
+            <p>3. {t("games.poker.helpStep3")}</p>
+            <p>4. {t("games.poker.helpStep4")}</p>
           </GameHelpModal>
         </div>
       </div>
@@ -214,9 +243,9 @@ export function PokerGame() {
         <Card className="lg:col-span-2 overflow-hidden">
           <CardContent className="p-0">
             {/* Game Table */}
-            <div className="relative bg-gradient-to-b from-pink-900/50 via-rose-950/50 to-background p-8 min-h-[350px]">
+            <div className="relative bg-pink-900/30 p-8 min-h-[350px]">
               {/* Decorative elements */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(236,72,153,0.1)_0%,transparent_50%)]" />
+              <div className="absolute inset-0 bg-pink-500/10" />
 
               {/* Cards */}
               <div className="relative flex justify-center gap-3 min-h-[160px] items-center">
@@ -255,7 +284,7 @@ export function PokerGame() {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-center mt-6 text-sm text-muted-foreground"
                 >
-                  Click cards to hold, then press Draw
+                  {t("games.poker.instruction")}
                 </motion.p>
               )}
 
@@ -268,7 +297,7 @@ export function PokerGame() {
                     className={cn(
                       "mt-6 p-5 rounded-xl text-center",
                       result.win
-                        ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30"
+                        ? "bg-emerald-500/20 border border-emerald-500/30"
                         : "bg-muted/50 border border-border"
                     )}
                   >
@@ -276,7 +305,7 @@ export function PokerGame() {
                       "text-2xl font-black",
                       result.win ? "text-green-400" : "text-muted-foreground"
                     )}>
-                      {result.rank}
+                      {getRankLabel(result.rank)}
                     </p>
                     {result.win && (
                       <motion.div
@@ -285,8 +314,8 @@ export function PokerGame() {
                         className="mt-2 flex items-center justify-center gap-2"
                       >
                         <Sparkles className="w-5 h-5 text-amber-400" />
-                        <span className="text-xl font-bold text-gradient-gold">
-                          {result.multiplier}× - Won {formatBalance(result.payout)}!
+                        <span className="text-xl font-bold text-amber-300">
+                          {result.multiplier}× - {t("games.poker.payout")} {formatBalance(result.payout)}
                         </span>
                         <Sparkles className="w-5 h-5 text-amber-400" />
                       </motion.div>
@@ -301,7 +330,7 @@ export function PokerGame() {
               <div className="p-4 bg-muted/20 border-t border-border/50">
                 <div className="flex items-center gap-2 mb-3">
                   <History className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Recent Hands</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t("games.poker.recentHands")}</span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {history.map((item, i) => (
@@ -316,7 +345,7 @@ export function PokerGame() {
                           : "bg-muted text-muted-foreground border border-border"
                       )}
                     >
-                      {item.win ? `${item.rank}` : "No Win"}
+                      {item.win ? getRankLabel(item.rank) : t("games.poker.lose")}
                     </motion.div>
                   ))}
                 </div>
@@ -328,19 +357,19 @@ export function PokerGame() {
         {/* Controls */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle>Controls</CardTitle>
+            <CardTitle>{t("games.poker.controls")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Balance */}
-            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-              <p className="text-xs text-muted-foreground mb-1">Your Balance</p>
-              <p className="text-2xl font-bold text-gradient-gold tabular-nums">{formatBalance(balance)}</p>
+            <div className="p-4 rounded-xl surface-soft border border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">{t("common.balance")}</p>
+              <p className="text-2xl font-bold text-foreground tabular-nums">{formatBalance(balance)}</p>
             </div>
 
             {phase === "betting" && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Bet Amount</label>
+                  <label className="text-sm font-medium">{t("games.bonus.bet")}</label>
                   <Input
                     type="number"
                     value={bet}
@@ -370,7 +399,7 @@ export function PokerGame() {
                 </div>
 
                 <Button
-                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700"
+                  className="w-full h-14 text-lg font-bold bg-pink-500 text-white hover:bg-pink-600"
                   onClick={deal}
                   disabled={loading || bet <= 0 || bet > balance}
                 >
@@ -379,7 +408,7 @@ export function PokerGame() {
                   ) : (
                     <>
                       <span className="mr-2">🎴</span>
-                      Deal
+                      {t("games.poker.deal")}
                     </>
                   )}
                 </Button>
@@ -388,14 +417,14 @@ export function PokerGame() {
 
             {phase === "draw" && (
               <Button
-                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700"
+                className="w-full h-14 text-lg font-bold bg-pink-500 text-white hover:bg-pink-600"
                 onClick={draw}
                 disabled={loading}
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  "Draw"
+                  t("games.poker.draw")
                 )}
               </Button>
             )}
@@ -405,7 +434,7 @@ export function PokerGame() {
                 className="w-full h-14 text-lg font-bold"
                 onClick={newGame}
               >
-                New Game
+                {t("games.poker.newGame")}
               </Button>
             )}
 
@@ -413,7 +442,7 @@ export function PokerGame() {
             <div className="p-4 rounded-xl bg-muted/30 space-y-2">
               <p className="text-sm font-semibold flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-400" />
-                Paytable
+                {t("games.poker.paytable")}
               </p>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {PAYTABLE.map((p) => (
@@ -428,7 +457,7 @@ export function PokerGame() {
                       "text-muted-foreground",
                       result?.rank === p.rank && result?.win && "text-green-400 font-medium"
                     )}>
-                      {p.rank}
+                      {getRankLabel(p.rank)}
                     </span>
                     <span className="text-amber-400 font-bold">{p.multiplier}×</span>
                   </div>

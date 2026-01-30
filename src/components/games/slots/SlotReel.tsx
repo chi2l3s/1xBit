@@ -41,8 +41,8 @@ export function SlotSymbol({ symbolId, isWinning = false, size = "md" }: SlotSym
       className={cn(
         sizeClasses[size],
         "rounded-lg flex items-center justify-center shrink-0",
-        "bg-gradient-to-br from-slate-800 to-slate-900",
-        "border border-amber-500/30",
+        "bg-muted/40",
+        "border border-border/60",
         isWinning && "ring-2 ring-amber-400 animate-pulse"
       )}
     >
@@ -147,11 +147,11 @@ export function SlotReel({ finalSymbols, spinning, reelIndex, onStop }: SlotReel
 
   return (
     <div className="relative">
-      <div className="bg-gradient-to-b from-zinc-900 via-black to-zinc-900 rounded-xl p-1 border-2 border-amber-600/50">
-        <div
-          className="relative overflow-hidden rounded-lg bg-black"
-          style={{ height: SYMBOL_SIZE * VISIBLE }}
-        >
+    <div className="bg-muted/40 rounded-xl p-1 border-2 border-amber-600/30">
+      <div
+        className="relative overflow-hidden rounded-lg bg-background/80"
+        style={{ height: SYMBOL_SIZE * VISIBLE }}
+      >
           <motion.div
             animate={controls}
             className="flex flex-col"
@@ -164,8 +164,8 @@ export function SlotReel({ finalSymbols, spinning, reelIndex, onStop }: SlotReel
           </motion.div>
 
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black to-transparent" />
+            <div className="absolute top-0 left-0 right-0 h-8 bg-background/60" />
+            <div className="absolute bottom-0 left-0 right-0 h-8 bg-background/60" />
           </div>
 
           <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 pointer-events-none" style={{ height: SYMBOL_SIZE }}>
@@ -182,9 +182,19 @@ interface SlotMachineProps {
   grid: string[][]
   spinning: boolean
   winLines?: { line: number; symbols: string; multiplier: number }[]
+  onAllStopped?: () => void
+  title?: string
+  lineLabel?: string
 }
 
-export function SlotMachine({ grid, spinning, winLines = [] }: SlotMachineProps) {
+export function SlotMachine({
+  grid,
+  spinning,
+  winLines = [],
+  onAllStopped,
+  title = "MEGA SLOTS",
+  lineLabel = "Line"
+}: SlotMachineProps) {
   const [allStopped, setAllStopped] = useState(true)
   const stoppedCount = useRef(0)
 
@@ -195,6 +205,12 @@ export function SlotMachine({ grid, spinning, winLines = [] }: SlotMachineProps)
     }
   }, [spinning])
 
+  useEffect(() => {
+    if (allStopped && !spinning) {
+      onAllStopped?.()
+    }
+  }, [allStopped, spinning, onAllStopped])
+
   const handleStop = () => {
     stoppedCount.current++
     if (stoppedCount.current >= 5) {
@@ -204,9 +220,9 @@ export function SlotMachine({ grid, spinning, winLines = [] }: SlotMachineProps)
 
   return (
     <div className="relative">
-      <div className="bg-gradient-to-b from-purple-900/80 via-purple-950 to-purple-900/80 rounded-2xl p-4 border-4 border-amber-500/50 shadow-2xl">
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-1.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 rounded-full shadow-lg">
-          <span className="text-sm font-black text-amber-900 tracking-wider">MEGA SLOTS</span>
+      <div className="bg-background/70 rounded-2xl p-4 border-2 border-amber-500/40 shadow-2xl">
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-1.5 bg-amber-300/90 rounded-full shadow-lg">
+          <span className="text-sm font-black text-amber-900 tracking-wider">{title}</span>
         </div>
 
         <div className="flex gap-1.5 justify-center mt-2">
@@ -230,9 +246,9 @@ export function SlotMachine({ grid, spinning, winLines = [] }: SlotMachineProps)
             {winLines.map((line, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-2 rounded-lg bg-green-500/20 border border-green-500/30"
+                className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30"
               >
-                <span className="text-sm text-green-300">Line {line.line}</span>
+                <span className="text-sm text-green-300">{lineLabel} {line.line}</span>
                 <span className="text-green-400 font-bold">{line.multiplier}×</span>
               </div>
             ))}
