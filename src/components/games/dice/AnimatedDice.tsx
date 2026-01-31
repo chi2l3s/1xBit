@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 interface AnimatedDiceProps {
   value: number | null
@@ -26,10 +27,11 @@ function DiceFace({ value, className }: { value: number; className?: string }) {
   return (
     <div className={cn(
       "absolute inset-0 rounded-xl border-2 border-white/20 flex items-center justify-center",
-      "bg-gradient-to-br from-white via-gray-100 to-gray-200",
-      "shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-2px_4px_rgba(0,0,0,0.1)]",
+      "bg-gradient-to-br from-white via-slate-100 to-slate-200",
+      "shadow-[inset_0_3px_6px_rgba(255,255,255,0.9),inset_0_-6px_10px_rgba(0,0,0,0.12)]",
       className
     )}>
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/60 via-transparent to-transparent opacity-70" />
       <svg viewBox="0 0 100 100" className="w-full h-full p-2">
         {dots.map((dot, i) => (
           <circle
@@ -54,9 +56,11 @@ function DiceFace({ value, className }: { value: number; className?: string }) {
 export function AnimatedDice({ value, isRolling, size = 120 }: AnimatedDiceProps) {
   const [displayValue, setDisplayValue] = useState(value || 1)
   const [randomRotation, setRandomRotation] = useState({ x: 0, y: 0, z: 0 })
+  const [rollSeed, setRollSeed] = useState(0)
 
   useEffect(() => {
     if (isRolling) {
+      setRollSeed(prev => prev + 1)
       const interval = setInterval(() => {
         setDisplayValue(Math.ceil(Math.random() * 6))
       }, 80)
@@ -76,6 +80,17 @@ export function AnimatedDice({ value, isRolling, size = 120 }: AnimatedDiceProps
     }
   }, [isRolling, value])
 
+  const rollAnimation = useMemo(() => {
+    const base = rollSeed * 13
+    return {
+      rotateX: [0, 140 + base, 320 + base, 520 + base, 720 + base],
+      rotateY: [0, 220 + base, 410 + base, 610 + base, 780 + base],
+      rotateZ: [0, 90 + base, -120 + base, 160 + base, -40 + base],
+      y: [0, -10, 0, -6, 0],
+      scale: [1, 1.05, 0.98, 1.03, 1],
+    }
+  }, [rollSeed])
+
   return (
     <div
       className="relative preserve-3d"
@@ -85,25 +100,35 @@ export function AnimatedDice({ value, isRolling, size = 120 }: AnimatedDiceProps
         perspective: 600,
       }}
     >
+      <AnimatePresence>
+        {isRolling && (
+          <motion.div
+            key="dice-glow"
+            className="absolute inset-0 rounded-[28px] bg-primary/30 blur-2xl"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 0.9, scale: 1.1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+          />
+        )}
+      </AnimatePresence>
       <motion.div
+        key={rollSeed}
         className="w-full h-full relative preserve-3d"
-        animate={isRolling ? {
-          rotateX: [0, 360, 720, 1080],
-          rotateY: [0, 180, 360, 540],
-          rotateZ: [0, 90, 180, 270],
-        } : {
+        animate={isRolling ? rollAnimation : {
           rotateX: randomRotation.x,
           rotateY: randomRotation.y,
           rotateZ: randomRotation.z,
+          y: 0,
+          scale: 1,
         }}
         transition={isRolling ? {
-          duration: 0.8,
+          duration: 0.9,
           repeat: Infinity,
-          ease: "linear"
+          ease: "easeInOut"
         } : {
           type: "spring",
-          stiffness: 100,
-          damping: 15,
+          stiffness: 140,
+          damping: 14,
         }}
         style={{ transformStyle: "preserve-3d" }}
       >
@@ -203,6 +228,8 @@ interface DiceResultDisplayProps {
 }
 
 export function DiceResultDisplay({ value, target, isOver, win }: DiceResultDisplayProps) {
+  const { t } = usePreferences()
+
   return (
     <div className="relative">
       <motion.div
@@ -213,8 +240,8 @@ export function DiceResultDisplay({ value, target, isOver, win }: DiceResultDisp
           "w-40 h-40 rounded-3xl flex items-center justify-center text-7xl font-black",
           "shadow-2xl border-4",
           win === null && "bg-muted border-border text-foreground",
-          win === true && "bg-gradient-to-br from-green-500 to-emerald-600 border-green-400 text-white glow-green",
-          win === false && "bg-gradient-to-br from-red-500 to-rose-600 border-red-400 text-white glow-red"
+          win === true && "bg-emerald-500 border-emerald-400 text-white glow-green",
+          win === false && "bg-rose-500 border-rose-400 text-white glow-red"
         )}
       >
         {value ?? "?"}
@@ -229,7 +256,7 @@ export function DiceResultDisplay({ value, target, isOver, win }: DiceResultDisp
             win ? "bg-green-400 text-green-900" : "bg-red-400 text-red-900"
           )}
         >
-          {win ? "WIN!" : "LOSE"}
+          {win ? t("common.win") : t("common.loss")}
         </motion.div>
       )}
     </div>

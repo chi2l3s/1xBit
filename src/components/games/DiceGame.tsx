@@ -13,6 +13,7 @@ import { ArrowUp, ArrowDown, Loader2, TrendingUp, History, Volume2, VolumeX } fr
 import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { AnimatedDice, DiceResultDisplay } from "./dice/AnimatedDice"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 interface HistoryItem {
   roll: number
@@ -25,6 +26,7 @@ interface HistoryItem {
 export function DiceGame() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t } = usePreferences()
   const [balance, setBalance] = useState<number>(0)
   const [bet, setBet] = useState<number>(100)
   const [target, setTarget] = useState<number>(50)
@@ -32,6 +34,7 @@ export function DiceGame() {
   const [loading, setLoading] = useState(false)
   const [rolling, setRolling] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const rollAudioRef = useRef<HTMLAudioElement | null>(null)
   const [result, setResult] = useState<{
     roll: number
     win: boolean
@@ -51,6 +54,32 @@ export function DiceGame() {
   useEffect(() => {
     fetchBalance()
   }, [])
+
+  useEffect(() => {
+    const audio = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_4f7f1b9981.mp3?filename=dice-roll-20557.mp3")
+    audio.preload = "auto"
+    audio.loop = true
+    audio.volume = 0.5
+    rollAudioRef.current = audio
+
+    return () => {
+      audio.pause()
+      rollAudioRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const audio = rollAudioRef.current
+    if (!audio) return
+
+    if (rolling && soundEnabled) {
+      audio.currentTime = 0
+      audio.play().catch(() => {})
+    } else {
+      audio.pause()
+      audio.currentTime = 0
+    }
+  }, [rolling, soundEnabled])
 
   const fetchBalance = async () => {
     try {
@@ -130,8 +159,8 @@ export function DiceGame() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <svg viewBox="0 0 24 24" className="w-7 h-7 text-white" fill="currentColor">
+            <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center shadow-lg shadow-black/20">
+              <svg viewBox="0 0 24 24" className="w-7 h-7 text-primary" fill="currentColor">
                 <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none"/>
                 <circle cx="8" cy="8" r="1.5"/>
                 <circle cx="16" cy="8" r="1.5"/>
@@ -142,8 +171,8 @@ export function DiceGame() {
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Dice</h1>
-            <p className="text-sm text-muted-foreground">Roll over or under to win</p>
+            <h1 className="text-2xl font-bold">{t("games.dice.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("games.dice.subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -156,22 +185,22 @@ export function DiceGame() {
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
           <GameHelpModal
-            title="How to play Dice"
-            description="Classic over / under dice game"
+            title={t("games.dice.helpTitle")}
+            description={t("games.dice.helpDesc")}
           >
-            <p>1. Choose your bet size in the panel on the right.</p>
-            <p>2. Move the slider to set the target number between 1 and 99.</p>
-            <p>3. Pick one of two modes:</p>
+            <p>1. {t("games.dice.helpStep1")}</p>
+            <p>2. {t("games.dice.helpStep2")}</p>
+            <p>3. {t("games.dice.helpStep3")}</p>
             <ul className="list-disc list-inside ml-2">
               <li>
-                <strong>Roll Under</strong> — you win if the roll is strictly lower than target.
+                <strong>{t("games.dice.rollUnder")}</strong> — {t("games.dice.helpStep4")}
               </li>
               <li>
-                <strong>Roll Over</strong> — you win if the roll is strictly higher than target.
+                <strong>{t("games.dice.rollOver")}</strong> — {t("games.dice.helpStep5")}
               </li>
             </ul>
-            <p>4. The closer the target is to the edge, the higher the multiplier but the lower the win chance.</p>
-            <p>5. Press the roll button to play one round.</p>
+            <p>4. {t("games.dice.helpStep6")}</p>
+            <p>5. {t("games.dice.helpStep7")}</p>
           </GameHelpModal>
         </div>
       </div>
@@ -181,7 +210,7 @@ export function DiceGame() {
         <Card className="lg:col-span-2 overflow-hidden">
           <CardContent className="p-0">
             {/* Dice Display Area */}
-            <div className="relative bg-gradient-to-b from-blue-950/50 via-slate-900/50 to-background p-8 min-h-[320px] flex flex-col items-center justify-center">
+            <div className="relative bg-background/80 p-8 min-h-[320px] flex flex-col items-center justify-center">
               {/* Decorative elements */}
               <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
               <div className="absolute top-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
@@ -229,8 +258,8 @@ export function DiceGame() {
                       )}
                     >
                       {result.win
-                        ? `+${formatBalance(result.payout - bet)} profit!`
-                        : `-${formatBalance(bet)} lost`}
+                        ? `+${formatBalance(result.payout - bet)} ${t("common.profit")}!`
+                        : `-${formatBalance(bet)} ${t("common.lost")}`}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -259,7 +288,7 @@ export function DiceGame() {
                   <motion.div
                     className={cn(
                       "absolute top-0 h-full transition-all duration-300",
-                      isOver ? "bg-gradient-to-r from-green-500/40 to-green-400/60" : "bg-gradient-to-l from-red-500/40 to-red-400/60"
+                      isOver ? "bg-emerald-400/40" : "bg-rose-400/40"
                     )}
                     style={{
                       left: isOver ? `${target}%` : 0,
@@ -323,25 +352,25 @@ export function DiceGame() {
                   variant={!isOver ? "default" : "outline"}
                   className={cn(
                     "h-14 text-lg font-semibold transition-all",
-                    !isOver && "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                    !isOver && "bg-rose-500 text-white hover:bg-rose-600"
                   )}
                   onClick={() => setIsOver(false)}
                   disabled={rolling}
                 >
                   <ArrowDown className="mr-2 h-5 w-5" />
-                  Roll Under {target}
+                  {t("games.dice.rollUnder")} {target}
                 </Button>
                 <Button
                   variant={isOver ? "default" : "outline"}
                   className={cn(
                     "h-14 text-lg font-semibold transition-all",
-                    isOver && "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+                    isOver && "bg-emerald-500 text-white hover:bg-emerald-600"
                   )}
                   onClick={() => setIsOver(true)}
                   disabled={rolling}
                 >
                   <ArrowUp className="mr-2 h-5 w-5" />
-                  Roll Over {target}
+                  {t("games.dice.rollOver")} {target}
                 </Button>
               </div>
             </div>
@@ -351,7 +380,7 @@ export function DiceGame() {
               <div className="p-4 bg-muted/20 border-t border-border/50">
                 <div className="flex items-center gap-2 mb-3">
                   <History className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Recent Rolls</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t("games.dice.recentRolls")}</span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {history.map((item, i) => (
@@ -379,20 +408,20 @@ export function DiceGame() {
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center justify-between">
-              <span>Place Bet</span>
+              <span>{t("games.betPanel.title")}</span>
               <TrendingUp className="h-5 w-5 text-muted-foreground" />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Balance */}
-            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-              <p className="text-xs text-muted-foreground mb-1">Your Balance</p>
-              <p className="text-2xl font-bold text-gradient-gold tabular-nums">{formatBalance(balance)}</p>
+            <div className="p-4 rounded-xl surface-soft border border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">{t("games.bonus.balance")}</p>
+              <p className="text-2xl font-bold text-foreground tabular-nums">{formatBalance(balance)}</p>
             </div>
 
             {/* Bet Amount */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Bet Amount</label>
+              <label className="text-sm font-medium">{t("games.bonus.bet")}</label>
               <Input
                 type="number"
                 value={bet}
@@ -425,7 +454,7 @@ export function DiceGame() {
             {/* Stats */}
             <div className="space-y-3 p-4 rounded-xl bg-muted/30">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Win Chance</span>
+                <span className="text-sm text-muted-foreground">{t("common.winChance")}</span>
                 <motion.span
                   key={winChance}
                   initial={{ scale: 1.1 }}
@@ -437,19 +466,19 @@ export function DiceGame() {
               </div>
               <div className="h-px bg-border" />
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Multiplier</span>
+                <span className="text-sm text-muted-foreground">{t("common.multiplier")}</span>
                 <motion.span
                   key={multiplier}
                   initial={{ scale: 1.1 }}
                   animate={{ scale: 1 }}
-                  className="text-lg font-bold text-amber-400"
+                  className="text-lg font-bold text-amber-300"
                 >
                   {multiplier.toFixed(4)}×
                 </motion.span>
               </div>
               <div className="h-px bg-border" />
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Profit on Win</span>
+                <span className="text-sm text-muted-foreground">{t("games.dice.profitOnWin")}</span>
                 <motion.span
                   key={`${bet}-${multiplier}`}
                   initial={{ scale: 1.1 }}
@@ -466,8 +495,8 @@ export function DiceGame() {
               className={cn(
                 "w-full h-14 text-lg font-bold",
                 isOver
-                  ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                  : "bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700"
+                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                  : "bg-rose-500 text-white hover:bg-rose-600"
               )}
               onClick={handlePlay}
               disabled={loading || bet <= 0 || bet > balance}
@@ -475,12 +504,12 @@ export function DiceGame() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Rolling...
+                  {t("games.dice.rolling")}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
                   {isOver ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
-                  Roll {isOver ? "Over" : "Under"} {target}
+                  {isOver ? t("games.dice.rollOver") : t("games.dice.rollUnder")} {target}
                 </span>
               )}
             </Button>

@@ -16,7 +16,7 @@ export function Explosion({ className }: { className?: string }) {
 
       {/* glow ball */}
       <motion.div
-        className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-400 blur-xl"
+        className="absolute inset-0 rounded-full bg-orange-400/60 blur-xl"
         initial={{ scale: 0.2, opacity: 0.95 }}
         animate={{ scale: 2.1, opacity: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
@@ -24,12 +24,6 @@ export function Explosion({ className }: { className?: string }) {
 
       {/* sparks */}
       <svg width="120" height="120" viewBox="0 0 120 120" className="relative">
-        <defs>
-          <linearGradient id="spark" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#fbbf24" />
-            <stop offset="1" stopColor="#ef4444" />
-          </linearGradient>
-        </defs>
         {Array.from({ length: 10 }).map((_, i) => {
           const angle = (i / 10) * Math.PI * 2
           const x2 = 60 + Math.cos(angle) * 46
@@ -42,7 +36,7 @@ export function Explosion({ className }: { className?: string }) {
               y1="60"
               x2={x2}
               y2={y2}
-              stroke="url(#spark)"
+              stroke="#fbbf24"
               strokeWidth="3"
               strokeLinecap="round"
               initial={{ opacity: 0.9, pathLength: 0 }}
@@ -79,5 +73,4 @@ export function Explosion({ className }: { className?: string }) {
     </div>
   )
 }
-
 

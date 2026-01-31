@@ -11,6 +11,7 @@ import { Loader2, Sparkles, Volume2, VolumeX, Zap, Trophy, History } from "lucid
 import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { SlotMachine, SLOT_SYMBOLS, SlotSymbol } from "./slots/SlotReel"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 interface HistoryItem {
   win: boolean
@@ -21,6 +22,7 @@ interface HistoryItem {
 export function SlotsGame() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t } = usePreferences()
   const [balance, setBalance] = useState<number>(0)
   const [bet, setBet] = useState<number>(100)
   const [loading, setLoading] = useState(false)
@@ -32,6 +34,11 @@ export function SlotsGame() {
     ["bell", "grape", "diamond", "seven", "cherry"],
   ])
   const [result, setResult] = useState<{
+    win: boolean
+    payout: number
+    winLines: { line: number; symbols: string; multiplier: number }[]
+  } | null>(null)
+  const [pendingResult, setPendingResult] = useState<{
     win: boolean
     payout: number
     winLines: { line: number; symbols: string; multiplier: number }[]
@@ -74,6 +81,7 @@ export function SlotsGame() {
     setLoading(true)
     setSpinning(true)
     setResult(null)
+    setPendingResult(null)
 
     try {
       const res = await fetch("/api/games/slots", {
@@ -87,23 +95,11 @@ export function SlotsGame() {
       if (res.ok) {
         setGrid(data.grid)
         setBalance(data.newBalance)
-
-        setTimeout(() => {
-          setSpinning(false)
-          setResult({
-            win: data.win,
-            payout: data.payout,
-            winLines: data.winLines,
-          })
-
-          const now = new Date()
-          setHistory(prev => [{
-            win: data.win,
-            payout: data.payout,
-            time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-          }, ...prev.slice(0, 9)])
-          setLoading(false)
-        }, 6000)
+        setPendingResult({
+          win: data.win,
+          payout: data.payout,
+          winLines: data.winLines,
+        })
       } else {
         setSpinning(false)
         setLoading(false)
@@ -113,6 +109,20 @@ export function SlotsGame() {
       setSpinning(false)
       setLoading(false)
     }
+  }
+
+  const handleSpinComplete = () => {
+    if (!pendingResult) return
+    setSpinning(false)
+    setResult(pendingResult)
+    setPendingResult(null)
+    const now = new Date()
+    setHistory(prev => [{
+      win: pendingResult.win,
+      payout: pendingResult.payout,
+      time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+    }, ...prev.slice(0, 9)])
+    setLoading(false)
   }
 
   const handleBetChange = (value: string) => {
@@ -135,20 +145,20 @@ export function SlotsGame() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+            <div className="w-14 h-14 rounded-2xl bg-fuchsia-500/20 flex items-center justify-center shadow-lg shadow-black/20">
               <span className="text-2xl">🎰</span>
             </div>
             <motion.div
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center"
+              className="absolute -top-1 -right-1 w-4 h-4 bg-amber-300/90 rounded-full flex items-center justify-center"
             >
               <Sparkles className="w-2.5 h-2.5 text-amber-900" />
             </motion.div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Mega Slots</h1>
-            <p className="text-sm text-muted-foreground">Spin to win big!</p>
+            <h1 className="text-2xl font-bold">{t("games.slots.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("games.slots.subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -161,37 +171,37 @@ export function SlotsGame() {
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
           <GameHelpModal
-            title="How to play Slots"
-            description="3x5 video slot with multiple win lines"
+            title={t("games.slots.helpTitle")}
+            description={t("games.slots.helpDesc")}
           >
-            <p>1. Set your bet size in the right panel.</p>
-            <p>2. Press <strong>SPIN</strong> to start the round.</p>
-            <p>3. The reels spin and stop on a random 3x5 grid of symbols.</p>
-            <p>4. Payouts are awarded for winning combinations from left to right according to the paytable.</p>
-            <p>5. Highlighted rows show which lines have won and their multiplier.</p>
-            <p>6. Your balance is updated automatically after each spin.</p>
+            <p>1. {t("games.slots.helpStep1")}</p>
+            <p>2. {t("games.slots.helpStep2")}</p>
+            <p>3. {t("games.slots.helpStep3")}</p>
+            <p>4. {t("games.slots.helpStep4")}</p>
+            <p>5. {t("games.slots.helpStep5")}</p>
+            <p>6. {t("games.slots.helpStep6")}</p>
           </GameHelpModal>
         </div>
       </div>
 
       <motion.div
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-500/30 p-4"
+        className="relative overflow-hidden rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4"
       >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
         <motion.div
           animate={{ x: ["-100%", "100%"] }}
           transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          className="absolute inset-0 bg-white/5"
         />
         <div className="relative flex items-center justify-center gap-3">
           <Trophy className="w-8 h-8 text-amber-400" />
           <div className="text-center">
-            <p className="text-xs text-amber-400/80 uppercase tracking-wider font-semibold">Progressive Jackpot</p>
+            <p className="text-xs text-amber-400/80 uppercase tracking-wider font-semibold">{t("games.slots.progressiveJackpot")}</p>
             <motion.p
               key={jackpot}
               initial={{ scale: 1.05 }}
               animate={{ scale: 1 }}
-              className="text-3xl font-black text-gradient-gold tabular-nums"
+              className="text-3xl font-black text-amber-300 tabular-nums"
             >
               {jackpot.toLocaleString()}
             </motion.p>
@@ -207,6 +217,9 @@ export function SlotsGame() {
               grid={grid}
               spinning={spinning}
               winLines={result?.winLines}
+              onAllStopped={handleSpinComplete}
+              title={t("games.slots.title")}
+              lineLabel={t("games.slots.lineLabel")}
             />
 
             <AnimatePresence>
@@ -218,8 +231,8 @@ export function SlotsGame() {
                   className={cn(
                     "mt-6 p-5 rounded-xl text-center",
                     result.win
-                      ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30"
-                      : "bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30"
+                      ? "bg-emerald-500/20 border border-emerald-500/30"
+                      : "bg-rose-500/20 border border-rose-500/30"
                   )}
                 >
                   {result.win ? (
@@ -231,16 +244,16 @@ export function SlotsGame() {
                         className="flex items-center justify-center gap-2"
                       >
                         <Sparkles className="w-6 h-6 text-amber-400" />
-                        <span className="text-2xl font-black text-green-400">YOU WIN!</span>
+                        <span className="text-2xl font-black text-green-400">{t("games.slots.win")}</span>
                         <Sparkles className="w-6 h-6 text-amber-400" />
                       </motion.div>
-                      <p className="text-3xl font-black text-gradient-gold">
+                      <p className="text-3xl font-black text-amber-300">
                         +{formatBalance(result.payout)}
                       </p>
                     </div>
                   ) : (
                     <p className="text-xl font-bold text-red-400">
-                      No win this time. Try again!
+                      {t("games.slots.noWin")}
                     </p>
                   )}
                 </motion.div>
@@ -252,18 +265,18 @@ export function SlotsGame() {
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center justify-between">
-              <span>Place Bet</span>
+              <span>{t("games.betPanel.title")}</span>
               <Zap className="h-5 w-5 text-amber-400" />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-              <p className="text-xs text-muted-foreground mb-1">Your Balance</p>
-              <p className="text-2xl font-bold text-gradient-gold tabular-nums">{formatBalance(balance)}</p>
+            <div className="p-4 rounded-xl surface-soft border border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">{t("common.balance")}</p>
+              <p className="text-2xl font-bold text-foreground tabular-nums">{formatBalance(balance)}</p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Bet Amount</label>
+              <label className="text-sm font-medium">{t("games.bonus.bet")}</label>
               <Input
                 type="number"
                 value={bet}
@@ -295,7 +308,7 @@ export function SlotsGame() {
             <div className="p-4 rounded-xl bg-muted/30 space-y-3">
               <p className="text-sm font-semibold flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-400" />
-                Paytable
+                {t("games.slots.paytable")}
               </p>
               <div className="space-y-2">
                 {SLOT_SYMBOLS.slice(0, 5).map((symbol) => (
@@ -313,7 +326,7 @@ export function SlotsGame() {
             <Button
               className={cn(
                 "w-full h-14 text-lg font-bold",
-                "bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700",
+                "bg-fuchsia-500 text-white hover:bg-fuchsia-600",
                 spinning && "animate-pulse"
               )}
               onClick={spin}
@@ -322,12 +335,12 @@ export function SlotsGame() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Spinning...
+                  {t("games.slots.spinning")}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <span className="text-2xl">🎰</span>
-                  SPIN
+                  {t("games.slots.spin")}
                 </span>
               )}
             </Button>
@@ -336,7 +349,7 @@ export function SlotsGame() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <History className="w-4 h-4" />
-                  <span>Recent Spins</span>
+                  <span>{t("games.slots.recentSpins")}</span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {history.slice(0, 5).map((item, i) => (
