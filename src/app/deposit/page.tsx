@@ -10,13 +10,14 @@ import { Label } from "@/components/ui/label"
 import { formatBalance } from "@/lib/utils"
 import { CreditCard, Wallet, Loader2, CheckCircle, Shield, Zap, Bitcoin, QrCode, PhoneOutgoing } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 const QUICK_AMOUNTS = [1000, 5000, 10000, 25000, 50000]
 
 const PAYMENT_METHODS = [
-  { id: "card", name: "Credit Card", icon: CreditCard, popular: true },
-  { id: "crypto", name: "Bitcoin", icon: Bitcoin, popular: false },
-  { id: "sbp", name: "СБП", icon: QrCode, popular: true },
+  { id: "card", icon: CreditCard, popular: true },
+  { id: "crypto", icon: Bitcoin, popular: false },
+  { id: "sbp", icon: QrCode, popular: true },
 ]
 
 function makeMockQrSvg(seed: string, size = 220) {
@@ -68,14 +69,8 @@ function makeMockQrSvg(seed: string, size = 220) {
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${w}" viewBox="0 0 ${w} ${w}">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#60a5fa"/>
-          <stop offset="1" stop-color="#a78bfa"/>
-        </linearGradient>
-      </defs>
       <rect x="0" y="0" width="${w}" height="${w}" rx="20" fill="rgba(0,0,0,0)" />
-      <g fill="url(#g)" style="color:#e5e7eb">
+      <g fill="#94a3b8" style="color:#e5e7eb">
         ${finder(0, 0)}
         ${finder(cells - 7, 0)}
         ${finder(0, cells - 7)}
@@ -90,6 +85,7 @@ function makeMockQrSvg(seed: string, size = 220) {
 export default function DepositPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t } = usePreferences()
   const [balance, setBalance] = useState<number>(0)
   const [amount, setAmount] = useState<number>(10000)
   const [loading, setLoading] = useState(false)
@@ -195,12 +191,12 @@ export default function DepositPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
-          <Wallet className="h-6 w-6 text-white" />
+        <div className="p-3 rounded-xl bg-amber-500/20">
+          <Wallet className="h-6 w-6 text-amber-300" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Deposit</h1>
-          <p className="text-muted-foreground text-sm">Add funds to your account</p>
+          <h1 className="text-2xl font-bold">{t("deposit.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("deposit.subtitle")}</p>
         </div>
       </div>
 
@@ -211,26 +207,26 @@ export default function DepositPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="h-5 w-5 text-primary" />
-                Quick Deposit
+                {t("deposit.addFunds")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Current balance */}
-              <div className="p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50">
+              <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Current Balance</p>
-                    <p className="text-3xl font-bold text-gradient-gold">{formatBalance(balance)}</p>
+                    <p className="text-sm text-muted-foreground">{t("deposit.balance")}</p>
+                    <p className="text-3xl font-bold text-foreground">{formatBalance(balance)}</p>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-gradient-gold flex items-center justify-center">
-                    <Wallet className="h-6 w-6 text-black" />
+                  <div className="w-12 h-12 rounded-full bg-amber-400/20 flex items-center justify-center">
+                    <Wallet className="h-6 w-6 text-amber-300" />
                   </div>
                 </div>
               </div>
 
               {/* Amount input */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Amount</Label>
+                <Label className="text-sm font-medium">{t("deposit.amount")}</Label>
                 <Input
                   type="number"
                   value={amount}
@@ -260,7 +256,7 @@ export default function DepositPage() {
 
               {/* Payment method */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Payment Method</Label>
+                <Label className="text-sm font-medium">{t("deposit.selectMethod")}</Label>
                 <div className="grid grid-cols-2 gap-3">
                   {PAYMENT_METHODS.map((method) => (
                     <motion.button
@@ -276,11 +272,15 @@ export default function DepositPage() {
                     >
                       {method.popular && (
                         <span className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold">
-                          Popular
+                          {t("deposit.popular")}
                         </span>
                       )}
                       <method.icon className={`h-6 w-6 mb-2 ${selectedMethod === method.id ? "text-primary" : "text-muted-foreground"}`} />
-                      <p className="font-medium">{method.name}</p>
+                      <p className="font-medium">
+                        {method.id === "card" && t("deposit.method.card")}
+                        {method.id === "crypto" && t("deposit.method.crypto")}
+                        {method.id === "sbp" && t("deposit.method.sbp")}
+                      </p>
                     </motion.button>
                   ))}
                 </div>
@@ -296,26 +296,26 @@ export default function DepositPage() {
                     className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400"
                   >
                     <CheckCircle className="h-5 w-5 shrink-0" />
-                    <span>Successfully deposited {formatBalance(amount)} coins!</span>
+                    <span>{t("deposit.success")} {formatBalance(amount)}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Deposit button */}
               <Button
-                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+                className="w-full h-14 text-lg font-bold bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={handleDeposit}
                 disabled={loading || amount <= 0}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Processing...
+                    {t("deposit.processing")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     {selectedMethod === "sbp" ? <QrCode className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
-                    Deposit {formatBalance(amount)}
+                    {t("deposit.depositNow")} {formatBalance(amount)}
                   </span>
                 )}
               </Button>
@@ -326,11 +326,11 @@ export default function DepositPage() {
           {selectedMethod === "card" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Card Details</CardTitle>
+                <CardTitle className="text-lg">{t("deposit.cardDetails")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Card Number</Label>
+                  <Label>{t("deposit.cardNumber")}</Label>
                   <Input
                     placeholder="4242 4242 4242 4242"
                     defaultValue="4242 4242 4242 4242"
@@ -339,11 +339,11 @@ export default function DepositPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Expiry Date</Label>
+                    <Label>{t("deposit.expiryDate")}</Label>
                     <Input placeholder="MM/YY" defaultValue="12/28" />
                   </div>
                   <div className="space-y-2">
-                    <Label>CVC</Label>
+                    <Label>{t("deposit.cvc")}</Label>
                     <Input placeholder="123" defaultValue="123" type="password" />
                   </div>
                 </div>
@@ -354,11 +354,11 @@ export default function DepositPage() {
           {selectedMethod === "crypto" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Bitcoin Payment</CardTitle>
+                <CardTitle className="text-lg">{t("deposit.bitcoinPayment")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 rounded-xl bg-muted/50 text-center">
-                  <p className="text-sm text-muted-foreground mb-2">Send BTC to this address:</p>
+                  <p className="text-sm text-muted-foreground mb-2">{t("deposit.sendBtc")}</p>
                   <code className="text-xs break-all bg-background p-2 rounded block">
                     bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
                   </code>
@@ -372,13 +372,13 @@ export default function DepositPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PhoneOutgoing className="h-5 w-5 text-primary" />
-                Withdraw to phone
+                {t("deposit.withdraw")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Amount</Label>
+                  <Label>{t("deposit.withdrawAmount")}</Label>
                   <Input
                     type="number"
                     value={withdrawAmount}
@@ -388,7 +388,7 @@ export default function DepositPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Phone number</Label>
+                  <Label>{t("deposit.withdrawPhone")}</Label>
                   <Input
                     value={withdrawPhone}
                     onChange={(e) => setWithdrawPhone(e.target.value)}
@@ -406,25 +406,25 @@ export default function DepositPage() {
                     className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400"
                   >
                     <CheckCircle className="h-5 w-5 shrink-0" />
-                    <span>Withdrawal request created!</span>
+                    <span>{t("deposit.withdrawSuccess")}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               <Button
-                className="w-full h-12 font-bold bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90"
+                className="w-full h-12 font-bold bg-amber-500 text-white hover:bg-amber-600"
                 onClick={handleWithdraw}
                 disabled={withdrawLoading || withdrawAmount <= 0 || withdrawAmount > balance}
               >
                 {withdrawLoading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Processing...
+                    {t("deposit.processing")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <PhoneOutgoing className="h-5 w-5" />
-                    Withdraw {formatBalance(withdrawAmount)}
+                    {t("deposit.withdrawNow")} {formatBalance(withdrawAmount)}
                   </span>
                 )}
               </Button>
@@ -441,8 +441,8 @@ export default function DepositPage() {
                   <Shield className="h-5 w-5 text-green-500" />
                 </div>
                 <div>
-                  <p className="font-medium">Secure Payment</p>
-                  <p className="text-xs text-muted-foreground">256-bit SSL encryption</p>
+                  <p className="font-medium">{t("deposit.securityTitle")}</p>
+                  <p className="text-xs text-muted-foreground">{t("deposit.securityDesc")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -450,22 +450,22 @@ export default function DepositPage() {
                   <Zap className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="font-medium">Instant Credit</p>
-                  <p className="text-xs text-muted-foreground">Funds available immediately</p>
+                  <p className="font-medium">{t("deposit.fastTitle")}</p>
+                  <p className="text-xs text-muted-foreground">{t("deposit.fastDesc")}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-primary/20 to-purple-500/20 border-primary/30">
+          <Card className="bg-primary/10 border-primary/30">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Zap className="h-5 w-5 text-primary" />
-                <p className="font-bold">First Deposit Bonus</p>
+                <p className="font-bold">{t("deposit.firstDepositBonus")}</p>
               </div>
-              <p className="text-3xl font-black text-gradient-blue mb-2">100%</p>
+              <p className="text-3xl font-black text-primary mb-2">100%</p>
               <p className="text-sm text-muted-foreground">
-                Double your first deposit up to 50,000 coins!
+                {t("deposit.firstDepositBonusDesc")}
               </p>
             </CardContent>
           </Card>
@@ -488,20 +488,20 @@ export default function DepositPage() {
               className="w-full max-w-md p-6 rounded-2xl glass border border-border/60"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <QrCode className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Оплата по СБП</h2>
-                </div>
-                <button
-                  onClick={() => {
-                    setSbpOpen(false)
-                    setSbpQr(null)
-                  }}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Закрыть
-                </button>
+              <div className="flex items-center gap-2">
+                <QrCode className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">{t("deposit.sbpTitle")}</h2>
               </div>
+              <button
+                onClick={() => {
+                  setSbpOpen(false)
+                  setSbpQr(null)
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                {t("deposit.sbpClose")}
+              </button>
+            </div>
 
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 rounded-2xl bg-background border border-border/60">
@@ -509,10 +509,10 @@ export default function DepositPage() {
                   <img src={sbpQr} alt="SBP QR" className="h-52 w-52" />
                 </div>
                 <p className="text-sm text-center text-muted-foreground">
-                  Отсканируйте QR в приложении банка и подтвердите перевод, затем нажмите кнопку ниже.
+                  {t("deposit.sbpDesc")}
                 </p>
                 <Button
-                  className="w-full h-11 font-semibold bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+                  className="w-full h-11 font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={async () => {
                     await handleDeposit()
                     setSbpOpen(false)
@@ -523,12 +523,12 @@ export default function DepositPage() {
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Подтверждаем оплату...
+                      {t("deposit.sbpConfirming")}
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <QrCode className="h-4 w-4" />
-                      Подтвердить оплату
+                      {t("deposit.sbpConfirm")}
                     </span>
                   )}
                 </Button>

@@ -9,12 +9,14 @@ export interface CrashResult {
 export function generateCrashPoint(): number {
   const houseEdge = 0.03
   const random = Math.random()
+  const maxMultiplier = 100
 
   if (random < houseEdge) {
     return 1.00
   }
 
-  const crashPoint = 1 / (1 - random)
+  const weighted = Math.pow(Math.random(), 2.6)
+  const crashPoint = 1.01 + (maxMultiplier - 1.01) * weighted
   return Math.max(1.00, Math.floor(crashPoint * 100) / 100)
 }
 

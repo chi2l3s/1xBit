@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence, useAnimation } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 const WHEEL_NUMBERS = [
   0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
@@ -96,9 +97,9 @@ export function RouletteWheel({ spinning, result, onSpinComplete }: RouletteWhee
 
   return (
     <div className="relative w-72 h-72 md:w-80 md:h-80">
-      <div className="absolute inset-0 rounded-full bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900 shadow-2xl shadow-black/50" />
+      <div className="absolute inset-0 rounded-full bg-amber-800/40 shadow-2xl shadow-black/50" />
 
-      <div className="absolute inset-2 rounded-full bg-gradient-to-br from-amber-600 via-amber-700 to-amber-800 shadow-inner" />
+      <div className="absolute inset-2 rounded-full bg-amber-700/50 shadow-inner" />
 
       <div
         className="absolute inset-4 rounded-full overflow-hidden"
@@ -114,14 +115,6 @@ export function RouletteWheel({ spinning, result, onSpinComplete }: RouletteWhee
               <feComposite operator="in" in="color" in2="inverse" result="shadow" />
               <feComposite operator="over" in="shadow" in2="SourceGraphic" />
             </filter>
-            <radialGradient id="hubGradient">
-              <stop offset="0%" stopColor="#d4af37" />
-              <stop offset="100%" stopColor="#b8860b" />
-            </radialGradient>
-            <radialGradient id="innerHubGradient">
-              <stop offset="0%" stopColor="#2a2a4e" />
-              <stop offset="100%" stopColor="#1a1a2e" />
-            </radialGradient>
           </defs>
 
           {WHEEL_NUMBERS.map((num, i) => {
@@ -164,23 +157,23 @@ export function RouletteWheel({ spinning, result, onSpinComplete }: RouletteWhee
             )
           })}
 
-          <circle cx="100" cy="100" r="35" fill="url(#hubGradient)" />
+          <circle cx="100" cy="100" r="35" fill="#d4af37" />
           <circle cx="100" cy="100" r="30" fill="#1a1a2e" />
-          <circle cx="100" cy="100" r="25" fill="url(#innerHubGradient)" />
+          <circle cx="100" cy="100" r="25" fill="#101827" />
         </svg>
       </div>
 
       <div className="absolute inset-4 rounded-full pointer-events-none">
-        <div
-          className="absolute w-4 h-4 rounded-full shadow-lg"
-          style={{
-            background: "radial-gradient(circle at 30% 30%, #ffffff, #e0e0e0, #a0a0a0)",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.8)",
+          <div
+            className="absolute w-4 h-4 rounded-full shadow-lg"
+            style={{
+            background: "#f8fafc",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.6)",
             left: "50%",
             top: "50%",
             transform: `translate(calc(-50% + ${ballX}px), calc(-50% + ${ballY}px))`,
-          }}
-        />
+            }}
+          />
       </div>
 
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1">
@@ -231,6 +224,8 @@ interface BettingTableProps {
 }
 
 export function BettingTable({ onPlaceBet, disabled, currentBets }: BettingTableProps) {
+  const { t } = usePreferences()
+
   const getBetAmount = (label: string) => {
     const bet = currentBets.find(b => b.label === label)
     return bet?.amount || 0
@@ -288,7 +283,7 @@ export function BettingTable({ onPlaceBet, disabled, currentBets }: BettingTable
 
   return (
     <div className="w-full overflow-x-auto">
-      <div className="min-w-[500px] p-4 bg-gradient-to-b from-green-800 to-green-900 rounded-xl border-4 border-amber-600/50">
+      <div className="min-w-[500px] p-4 bg-emerald-900/40 rounded-xl border-2 border-amber-500/40">
         <div className="grid grid-cols-13 gap-1 mb-3">
           <button
             onClick={() => onPlaceBet("number", "0", [0])}
@@ -307,30 +302,30 @@ export function BettingTable({ onPlaceBet, disabled, currentBets }: BettingTable
         </div>
 
         <div className="grid grid-cols-3 gap-2 mb-2">
-          <OutsideBet type="1st12" label="1st 12" className="text-sm" />
-          <OutsideBet type="2nd12" label="2nd 12" className="text-sm" />
-          <OutsideBet type="3rd12" label="3rd 12" className="text-sm" />
+          <OutsideBet type="1st12" label={t("games.roulette.labels.first12")} className="text-sm" />
+          <OutsideBet type="2nd12" label={t("games.roulette.labels.second12")} className="text-sm" />
+          <OutsideBet type="3rd12" label={t("games.roulette.labels.third12")} className="text-sm" />
         </div>
 
         <div className="grid grid-cols-6 gap-2">
-          <OutsideBet type="1-18" label="1-18" className="text-sm" />
-          <OutsideBet type="even" label="Even" className="text-sm" />
+          <OutsideBet type="1-18" label={t("games.roulette.labels.low")} className="text-sm" />
+          <OutsideBet type="even" label={t("games.roulette.labels.even")} className="text-sm" />
           <button
-            onClick={() => onPlaceBet("red", "Red")}
+            onClick={() => onPlaceBet("red", t("games.roulette.labels.red"))}
             disabled={disabled}
             className="bg-red-600 hover:bg-red-500 text-white p-2 rounded font-bold text-sm disabled:opacity-50"
           >
-            Red
+            {t("games.roulette.labels.red")}
           </button>
           <button
-            onClick={() => onPlaceBet("black", "Black")}
+            onClick={() => onPlaceBet("black", t("games.roulette.labels.black"))}
             disabled={disabled}
             className="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded font-bold text-sm disabled:opacity-50"
           >
-            Black
+            {t("games.roulette.labels.black")}
           </button>
-          <OutsideBet type="odd" label="Odd" className="text-sm" />
-          <OutsideBet type="19-36" label="19-36" className="text-sm" />
+          <OutsideBet type="odd" label={t("games.roulette.labels.odd")} className="text-sm" />
+          <OutsideBet type="19-36" label={t("games.roulette.labels.high")} className="text-sm" />
         </div>
       </div>
     </div>
