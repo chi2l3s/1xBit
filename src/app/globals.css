@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0e17;
-  --foreground: #e8eaed;
-  --card: #111827;
-  --card-foreground: #e8eaed;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --secondary: #1e3a5f;
-  --secondary-foreground: #e8eaed;
+  --background: #0b0f14;
+  --foreground: #f5f7fb;
+  --card: #141821;
+  --card-foreground: #f5f7fb;
+  --primary: #38bdf8;
+  --primary-foreground: #0b0f14;
+  --secondary: #1c2230;
+  --secondary-foreground: #dbe3ee;
   --accent: #f59e0b;
-  --accent-foreground: #0a0e17;
-  --muted: #1f2937;
-  --muted-foreground: #9ca3af;
-  --border: #374151;
-  --input: #1f2937;
-  --ring: #3b82f6;
+  --accent-foreground: #1a1306;
+  --muted: #1b2230;
+  --muted-foreground: #9aa4b2;
+  --border: rgba(148, 163, 184, 0.25);
+  --input: #1a2230;
+  --ring: #38bdf8;
+  --destructive: #f87171;
+  --destructive-foreground: #1a0a0a;
+  --success: #34d399;
+  --success-foreground: #0b1913;
+  --surface: rgba(22, 28, 38, 0.78);
+  --surface-strong: #161c26;
+  --surface-soft: rgba(255, 255, 255, 0.06);
+  --radius: 0.75rem;
+}
+
+[data-theme="light"] {
+  --background: #f6f7fb;
+  --foreground: #0d1117;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --primary: #0ea5e9;
+  --primary-foreground: #f8fafc;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --accent: #f59e0b;
+  --accent-foreground: #1a1306;
+  --muted: #e2e8f0;
+  --muted-foreground: #475569;
+  --border: rgba(15, 23, 42, 0.12);
+  --input: #e2e8f0;
+  --ring: #0ea5e9;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --success: #10b981;
-  --success-foreground: #ffffff;
-  --radius: 0.5rem;
+  --destructive-foreground: #fff5f5;
+  --success: #16a34a;
+  --success-foreground: #f0fdf4;
+  --surface: rgba(255, 255, 255, 0.85);
+  --surface-strong: #ffffff;
+  --surface-soft: rgba(15, 23, 42, 0.05);
 }
 
 @theme inline {
@@ -57,7 +85,8 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "SF Pro Display", "SF Pro Text", "Inter", Arial, Helvetica, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Custom scrollbar */
@@ -81,38 +110,19 @@ body {
 
 /* Glow effects */
 .glow-blue {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 0 60px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.35);
 }
 
 .glow-gold {
-  box-shadow: 0 0 30px rgba(245, 158, 11, 0.4), 0 0 60px rgba(245, 158, 11, 0.2);
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.35);
 }
 
 .glow-green {
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.4), 0 0 60px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 24px rgba(52, 211, 153, 0.35);
 }
 
 .glow-red {
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.4), 0 0 60px rgba(239, 68, 68, 0.2);
-}
-
-/* Modern text effects */
-.text-glow {
-  text-shadow: 0 0 20px currentColor;
-}
-
-.text-gradient-blue {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa, #93c5fd);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.text-gradient-gold {
-  background: linear-gradient(135deg, #f59e0b, #fbbf24, #fcd34d);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  box-shadow: 0 0 24px rgba(248, 113, 113, 0.35);
 }
 
 /* Card animations */
@@ -192,32 +202,48 @@ body {
   animation: explosion 0.5s ease-out forwards;
 }
 
-/* Gradient backgrounds */
-.bg-gradient-dark {
-  background: linear-gradient(180deg, #0a0e17 0%, #111827 100%);
+/* Surface styles */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(14px);
 }
 
-.bg-gradient-card {
-  background: linear-gradient(145deg, #1f2937 0%, #111827 100%);
+.surface-strong {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
 }
 
-.bg-gradient-blue {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+.surface-soft {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
 }
 
-.bg-gradient-gold {
-  background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%);
+/* Convex buttons */
+.button-convex {
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.35),
+    inset 0 2px 4px rgba(255, 255, 255, 0.12),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.35);
 }
 
-.bg-gradient-green {
-  background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+.button-convex:hover {
+  transform: translateY(-1px);
+}
+
+.button-convex:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.4),
+    inset 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
 /* Glass effect */
 .glass {
-  background: rgba(17, 24, 39, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(55, 65, 81, 0.5);
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
 }
 
 /* Playing cards */
@@ -231,12 +257,12 @@ body {
 
 /* Crash game specific */
 .crash-graph {
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);
+  background: rgba(52, 211, 153, 0.12);
 }
 
 .crash-line {
   stroke: #10b981;
   stroke-width: 3;
   fill: none;
-  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.35));
 }

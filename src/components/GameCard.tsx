@@ -4,13 +4,14 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { LucideIcon, Users, Play } from "lucide-react"
 import { motion } from "framer-motion"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 export interface GameCardProps {
   name: string
   description: string
   href: string
   icon: LucideIcon
-  gradient: string
+  tone?: string
   players?: string
   hot?: boolean
 }
@@ -20,26 +21,28 @@ export function GameCard({
   description,
   href,
   icon: Icon,
-  gradient,
+  tone = "text-primary",
   players,
   hot,
 }: GameCardProps) {
+  const { t } = usePreferences()
+
   return (
     <Link href={href}>
       <motion.div
         whileHover={{ y: -4 }}
-        className="group relative overflow-hidden rounded-2xl bg-gradient-card border border-border/50 hover:border-border transition-all cursor-pointer"
+        className="group relative overflow-hidden rounded-2xl bg-card/80 border border-border/50 hover:border-border transition-all cursor-pointer"
       >
         {hot && (
-          <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full bg-orange-500 text-white text-[10px] font-bold uppercase">
-            Hot
+          <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full bg-orange-500/20 text-orange-300 text-[10px] font-bold uppercase">
+            {t("common.hot")}
           </div>
         )}
 
-        <div className={cn("h-36 flex items-center justify-center bg-gradient-to-br", gradient)}>
+        <div className="h-36 flex items-center justify-center bg-muted/30">
           <div className="relative">
-            <div className="absolute inset-0 bg-white/20 rounded-full blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <Icon className="h-16 w-16 text-white transition-transform group-hover:scale-110 relative z-10" />
+            <div className="absolute inset-0 rounded-full blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity bg-primary/20" />
+            <Icon className={cn("h-16 w-16 transition-transform group-hover:scale-110 relative z-10", tone)} />
           </div>
         </div>
 
@@ -59,7 +62,7 @@ export function GameCard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-primary font-medium text-sm group-hover:translate-x-1 transition-transform">
               <Play className="h-4 w-4 fill-current" />
-              <span>Play Now</span>
+              <span>{t("common.playNow")}</span>
             </div>
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
               <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">

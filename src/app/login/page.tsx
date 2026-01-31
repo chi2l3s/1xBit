@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { t } = usePreferences()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -30,13 +32,13 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError("Invalid email or password")
+        setError(t("login.error.invalid"))
       } else {
         router.push("/")
         router.refresh()
       }
     } catch {
-      setError("Something went wrong")
+      setError(t("login.error.generic"))
     } finally {
       setLoading(false)
     }
@@ -46,9 +48,9 @@ export default function LoginPage() {
     <div className="min-h-[80vh] flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl">{t("login.title")}</CardTitle>
           <CardDescription>
-            Sign in to your account to continue playing
+            {t("login.subtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,7 +62,7 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("login.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -72,11 +74,11 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("login.password")}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Your password"
+                placeholder={t("login.passwordPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -87,17 +89,17 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  {t("login.signingIn")}
                 </>
               ) : (
-                "Sign In"
+                t("login.signIn")
               )}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
+              {t("login.noAccount")}{" "}
               <Link href="/register" className="text-primary hover:underline">
-                Register
+                {t("login.register")}
               </Link>
             </p>
           </form>

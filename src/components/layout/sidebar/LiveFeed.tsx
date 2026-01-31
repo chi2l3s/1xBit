@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { AnimatePresence, motion } from "framer-motion"
 import { CircleDot, Dices, Spade, SquareStack, TrendingUp, Target } from "lucide-react"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 type FeedItem = {
   id: string
@@ -63,6 +64,7 @@ function makeItem(index: number, timestamp: number): FeedItem {
 }
 
 export function LiveFeed() {
+  const { t } = usePreferences()
   const counterRef = useRef(0)
   const baseTimeRef = useRef(Date.now())
 
@@ -94,7 +96,7 @@ export function LiveFeed() {
       <div className="flex items-center gap-2 shrink-0">
         <span className="inline-flex h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
         <span className="uppercase tracking-[0.16em] text-[10px] text-muted-foreground font-semibold">
-          Live
+          {t("common.live")}
         </span>
       </div>
       <div className="h-4 w-px bg-border/60 shrink-0" />
