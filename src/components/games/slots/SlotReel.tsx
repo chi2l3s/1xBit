@@ -60,7 +60,7 @@ export function SlotSymbol({ symbolId, isWinning = false, size = "md" }: SlotSym
 
 const SYMBOL_SIZE = 96
 const VISIBLE = 3
-const REEL_SPINS = 5
+const REEL_SPINS = 7
 const STOP_OVERSHOOT = 0.2
 
 interface SlotReelProps {
@@ -86,7 +86,7 @@ export function SlotReel({ finalSymbols, spinning, reelIndex, onStop }: SlotReel
 
       const totalScroll = (allSymbols.length - VISIBLE) * SYMBOL_SIZE
       const delay = reelIndex * 0.25
-      const duration = 2.4 + reelIndex * 0.35
+      const duration = 3.2 + reelIndex * 0.4
       const overshoot = SYMBOL_SIZE * STOP_OVERSHOOT
 
       controls.set({ y: 0 })
@@ -177,16 +177,11 @@ export function SlotMachine({
     }
   }, [spinning])
 
-  useEffect(() => {
-    if (allStopped && !spinning) {
-      onAllStopped?.()
-    }
-  }, [allStopped, spinning, onAllStopped])
-
   const handleStop = () => {
     stoppedCount.current++
     if (stoppedCount.current >= 5) {
       setAllStopped(true)
+      onAllStopped?.()
     }
   }
 
