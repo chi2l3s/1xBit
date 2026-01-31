@@ -34,6 +34,7 @@ export function DiceGame() {
   const [loading, setLoading] = useState(false)
   const [rolling, setRolling] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const rollAudioRef = useRef<HTMLAudioElement | null>(null)
   const [result, setResult] = useState<{
     roll: number
     win: boolean
@@ -53,6 +54,32 @@ export function DiceGame() {
   useEffect(() => {
     fetchBalance()
   }, [])
+
+  useEffect(() => {
+    const audio = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_4f7f1b9981.mp3?filename=dice-roll-20557.mp3")
+    audio.preload = "auto"
+    audio.loop = true
+    audio.volume = 0.5
+    rollAudioRef.current = audio
+
+    return () => {
+      audio.pause()
+      rollAudioRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const audio = rollAudioRef.current
+    if (!audio) return
+
+    if (rolling && soundEnabled) {
+      audio.currentTime = 0
+      audio.play().catch(() => {})
+    } else {
+      audio.pause()
+      audio.currentTime = 0
+    }
+  }, [rolling, soundEnabled])
 
   const fetchBalance = async () => {
     try {
