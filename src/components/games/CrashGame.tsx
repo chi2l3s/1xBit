@@ -27,11 +27,14 @@ export function CrashGame() {
   const [balance, setBalance] = useState<number>(0)
   const [bet, setBet] = useState<number>(100)
   const [autoCashOut, setAutoCashOut] = useState<number>(2.0)
+  const [autoCashOutEnabled, setAutoCashOutEnabled] = useState(true)
   const [gameState, setGameState] = useState<GameState>("waiting")
   const [currentMultiplier, setCurrentMultiplier] = useState<number>(1.0)
   const [crashPoint, setCrashPoint] = useState<number | null>(null)
   const [planePosition, setPlanePosition] = useState({ x: 0, y: 0 })
   const [trail, setTrail] = useState<{ x: number; y: number }[]>([])
+  const [roundId, setRoundId] = useState<string | null>(null)
+  const [cashOutPending, setCashOutPending] = useState(false)
   const [result, setResult] = useState<{
     win: boolean
     payout: number
@@ -46,6 +49,7 @@ export function CrashGame() {
   ])
   const animationRef = useRef<number | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const settleRef = useRef(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -136,22 +140,28 @@ export function CrashGame() {
 
     setGameState("playing")
     setResult(null)
+    setCashOutPending(false)
+    setRoundId(null)
     setCurrentMultiplier(1.0)
     setPlanePosition({ x: 0, y: 0 })
     setTrail([])
+    setCrashPoint(null)
+    settleRef.current = false
 
     try {
       const res = await fetch("/api/games/crash", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bet, cashOutAt: autoCashOut }),
+        body: JSON.stringify({ action: "start", bet }),
       })
 
       const data = await res.json()
 
       if (res.ok) {
         setCrashPoint(data.crashPoint)
-        animateMultiplier(data.crashPoint, data)
+        setRoundId(data.roundId)
+        setBalance(data.newBalance)
+        animateMultiplier(data.crashPoint)
       } else {
         setGameState("waiting")
       }
@@ -161,10 +171,7 @@ export function CrashGame() {
     }
   }
 
-  const animateMultiplier = (
-    finalCrashPoint: number,
-    serverResult: { win: boolean; payout: number; cashOutMultiplier: number; newBalance: number }
-  ) => {
+  const animateMultiplier = (finalCrashPoint: number) => {
     const duration = Math.min((finalCrashPoint - 1) * 1500, 15000)
     const startTime = Date.now()
 
@@ -180,16 +187,8 @@ export function CrashGame() {
       setPlanePosition({ x, y })
       setTrail(prev => [...prev, { x, y }])
 
-      if (serverResult.win && currentMult >= autoCashOut) {
-        setCurrentMultiplier(autoCashOut)
-        setGameState("cashed_out")
-        setResult({
-          win: true,
-          payout: serverResult.payout,
-          multiplier: serverResult.cashOutMultiplier,
-        })
-        setBalance(serverResult.newBalance)
-        addToHistory(serverResult.cashOutMultiplier)
+      if (autoCashOutEnabled && !settleRef.current && currentMult >= autoCashOut) {
+        handleCashOut(autoCashOut)
         return
       }
 
@@ -199,20 +198,96 @@ export function CrashGame() {
         animationRef.current = requestAnimationFrame(animate)
       } else {
         setCurrentMultiplier(finalCrashPoint)
-        if (!serverResult.win) {
-          setGameState("crashed")
-          setResult({
-            win: false,
-            payout: 0,
-            multiplier: finalCrashPoint,
-          })
-          setBalance(serverResult.newBalance)
-          addToHistory(finalCrashPoint)
+        if (!settleRef.current) {
+          handleCrash()
         }
       }
     }
 
     animationRef.current = requestAnimationFrame(animate)
+  }
+
+  const handleCashOut = async (cashOutAt: number) => {
+    if (!roundId || settleRef.current) return
+
+    settleRef.current = true
+    setCashOutPending(true)
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current)
+    }
+
+    try {
+      const cashOutValue = Math.max(1.01, Math.floor(cashOutAt * 100) / 100)
+      const res = await fetch("/api/games/crash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "cashout",
+          roundId,
+          cashOutAt: cashOutValue,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setCurrentMultiplier(cashOutValue)
+        setGameState("cashed_out")
+        setResult({
+          win: true,
+          payout: data.payout,
+          multiplier: data.cashOutMultiplier,
+        })
+        setBalance(data.newBalance)
+        addToHistory(data.cashOutMultiplier)
+        setRoundId(null)
+      } else {
+        setGameState("waiting")
+      }
+    } catch (error) {
+      console.error("Cash out error:", error)
+      setGameState("waiting")
+    } finally {
+      setCashOutPending(false)
+    }
+  }
+
+  const handleCrash = async () => {
+    if (!roundId || settleRef.current) return
+
+    settleRef.current = true
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current)
+    }
+
+    try {
+      const res = await fetch("/api/games/crash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "crash", roundId }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setGameState("crashed")
+        setResult({
+          win: false,
+          payout: 0,
+          multiplier: data.crashPoint,
+        })
+        setBalance(data.newBalance)
+        addToHistory(data.crashPoint)
+        setRoundId(null)
+      } else {
+        setGameState("waiting")
+      }
+    } catch (error) {
+      console.error("Crash settle error:", error)
+      setGameState("waiting")
+    }
   }
 
   const addToHistory = (multiplier: number) => {
@@ -293,11 +368,11 @@ export function CrashGame() {
               <AnimatePresence>
               {gameState === "waiting" && (
                 <motion.div
-                  className="absolute left-1/2 bottom-[8%] -translate-x-1/2"
+                  className="absolute left-1/2 bottom-[6%] -translate-x-1/2"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <Rocket className="scale-[0.9]" glowClassName="bg-emerald-500/30" flame={false} />
+                  <Rocket className="scale-[1.15]" glowClassName="bg-emerald-500/30" flame={false} />
                 </motion.div>
               )}
 
@@ -317,7 +392,7 @@ export function CrashGame() {
                   }}
                   transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <Rocket className="scale-[0.9]" glowClassName="bg-emerald-500/45" />
+                    <Rocket className="scale-[1.2]" glowClassName="bg-emerald-500/45" />
                   </motion.div>
                 )}
 
@@ -333,7 +408,7 @@ export function CrashGame() {
                     transition={{ duration: 0.8 }}
                   >
                     <div className="relative">
-                      <Rocket className="scale-[0.9] opacity-90" glowClassName="bg-red-500/40" />
+                      <Rocket className="scale-[1.2] opacity-90" glowClassName="bg-red-500/40" />
                       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                         <Explosion />
                       </div>
@@ -356,7 +431,7 @@ export function CrashGame() {
                     transition={{ duration: 1 }}
                   >
                     <div style={{ transform: "rotate(-28deg)" }}>
-                      <Rocket className="scale-[0.9]" glowClassName="bg-emerald-500/45" />
+                      <Rocket className="scale-[1.2]" glowClassName="bg-emerald-500/45" />
                     </div>
                   </motion.div>
                 )}
@@ -481,7 +556,7 @@ export function CrashGame() {
                 onChange={(e) => setAutoCashOut(Math.max(1.01, parseFloat(e.target.value) || 1.01))}
                 min={1.01}
                 step={0.1}
-                disabled={gameState === "playing"}
+                disabled={gameState === "playing" || !autoCashOutEnabled}
                 className="text-lg font-semibold"
               />
               <div className="grid grid-cols-4 gap-1">
@@ -491,7 +566,7 @@ export function CrashGame() {
                     variant="outline"
                     size="sm"
                     onClick={() => setAutoCashOut(mult)}
-                    disabled={gameState === "playing"}
+                    disabled={gameState === "playing" || !autoCashOutEnabled}
                     className="text-xs"
                   >
                     {mult}x
@@ -508,7 +583,7 @@ export function CrashGame() {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t("games.bonus.potentialWin")}</span>
                 <span className="font-bold text-green-400">
-                  {formatBalance(bet * autoCashOut)}
+                  {autoCashOutEnabled ? formatBalance(bet * autoCashOut) : "--"}
                 </span>
               </div>
             </div>
@@ -530,13 +605,13 @@ export function CrashGame() {
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <span className="inline-flex scale-[0.6] -m-2">
+                  <span className="inline-flex scale-[0.7] -m-2">
                     <Rocket flame={false} />
                   </span>
                   {t("games.crash.start")}
                 </span>
-              )}
-            </Button>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
