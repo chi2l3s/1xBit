@@ -12,6 +12,7 @@ import { Loader2, Volume2, VolumeX, Sparkles, History } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { PlayingCard, CardData, Suit } from "./cards/PlayingCard"
+import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 interface DealerHand {
   cards: (GameCard | { hidden: true })[]
@@ -41,6 +42,7 @@ function toCardData(card: GameCard): CardData {
 export function BlackjackGame() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t } = usePreferences()
   const [balance, setBalance] = useState<number>(0)
   const [bet, setBet] = useState<number>(100)
   const [loading, setLoading] = useState(false)
@@ -165,17 +167,17 @@ export function BlackjackGame() {
   const getStatusMessage = (status: string): { message: string; emoji: string } => {
     switch (status) {
       case "blackjack":
-        return { message: "BLACKJACK!", emoji: "🎉" }
+        return { message: t("games.blackjack.status.blackjack"), emoji: "🎉" }
       case "playerWin":
-        return { message: "You Win!", emoji: "🏆" }
+        return { message: t("games.blackjack.status.playerWin"), emoji: "🏆" }
       case "dealerBusted":
-        return { message: "Dealer Busted!", emoji: "💥" }
+        return { message: t("games.blackjack.status.dealerBusted"), emoji: "💥" }
       case "playerBusted":
-        return { message: "Busted!", emoji: "💔" }
+        return { message: t("games.blackjack.status.playerBusted"), emoji: "💔" }
       case "dealerWin":
-        return { message: "Dealer Wins", emoji: "😔" }
+        return { message: t("games.blackjack.status.dealerWin"), emoji: "😔" }
       case "push":
-        return { message: "Push - Bet Returned", emoji: "🤝" }
+        return { message: t("games.blackjack.status.push"), emoji: "🤝" }
       default:
         return { message: "", emoji: "" }
     }
@@ -202,13 +204,13 @@ export function BlackjackGame() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center shadow-lg shadow-black/20">
               <span className="text-2xl">🃏</span>
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Blackjack</h1>
-            <p className="text-sm text-muted-foreground">Beat the dealer to 21</p>
+            <h1 className="text-2xl font-bold">{t("games.blackjack.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("games.blackjack.subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -221,20 +223,16 @@ export function BlackjackGame() {
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
           <GameHelpModal
-            title="How to play Blackjack"
-            description="Classic 21 vs dealer"
+            title={t("games.blackjack.helpTitle")}
+            description={t("games.blackjack.helpDesc")}
           >
-            <p>1. Set your bet and press <strong>Deal</strong> to start a round.</p>
-            <p>2. You and dealer each get two cards; dealer may have one hidden card.</p>
-            <p>3. Your goal is to get as close to 21 as possible without going over.</p>
-            <p>4. On your turn you can:</p>
-            <ul className="list-disc list-inside ml-2">
-              <li><strong>Hit</strong> — take another card.</li>
-              <li><strong>Stand</strong> — stop and let the dealer play.</li>
-            </ul>
-            <p>5. Dealer draws until reaching at least 17, then stands.</p>
-            <p>6. If you bust (&gt;21) you lose; if dealer busts you win automatically.</p>
-            <p>7. Blackjack (A + 10-value) pays enhanced 2.5x.</p>
+            <p>1. {t("games.blackjack.helpStep1")}</p>
+            <p>2. {t("games.blackjack.helpStep2")}</p>
+            <p>3. {t("games.blackjack.helpStep3")}</p>
+            <p>4. {t("games.blackjack.helpStep4")}</p>
+            <p>5. {t("games.blackjack.helpStep5")}</p>
+            <p>6. {t("games.blackjack.helpStep6")}</p>
+            <p>7. {t("games.blackjack.helpStep7")}</p>
           </GameHelpModal>
         </div>
       </div>
@@ -244,14 +242,14 @@ export function BlackjackGame() {
         <Card className="lg:col-span-2 overflow-hidden">
           <CardContent className="p-0">
             {/* Game Table */}
-            <div className="relative bg-gradient-to-b from-green-800 via-green-900 to-green-950 min-h-[450px] p-6">
+            <div className="relative bg-emerald-900/40 min-h-[450px] p-6">
               {/* Table texture */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
+              <div className="absolute inset-0 bg-black/20" />
 
               {/* Dealer area */}
               <div className="relative text-center mb-8">
                 <div className="inline-block px-4 py-1 bg-black/30 rounded-full text-sm text-green-300 mb-4">
-                  Dealer
+                  {t("games.blackjack.dealer")}
                 </div>
                 <div className="flex justify-center -space-x-6 min-h-[120px] items-center">
                   <AnimatePresence>
@@ -283,10 +281,10 @@ export function BlackjackGame() {
                       className={cn(
                         "px-8 py-4 rounded-2xl text-center",
                         result.win
-                          ? "bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-2 border-green-400"
+                          ? "bg-emerald-500/30 border-2 border-emerald-400"
                           : result.payout > 0
-                          ? "bg-gradient-to-r from-amber-500/30 to-orange-500/30 border-2 border-amber-400"
-                          : "bg-gradient-to-r from-red-500/30 to-rose-500/30 border-2 border-red-400"
+                          ? "bg-amber-500/30 border-2 border-amber-400"
+                          : "bg-rose-500/30 border-2 border-rose-400"
                       )}
                     >
                       <div className="flex items-center gap-2 justify-center mb-1">
@@ -299,7 +297,7 @@ export function BlackjackGame() {
                         </span>
                       </div>
                       {result.payout > 0 && (
-                        <p className="text-lg font-bold text-gradient-gold">+{formatBalance(result.payout)}</p>
+                        <p className="text-lg font-bold text-amber-300">+{formatBalance(result.payout)}</p>
                       )}
                     </motion.div>
                   )}
@@ -324,12 +322,12 @@ export function BlackjackGame() {
                   >
                     {playerHand.value}
                     {playerHand.soft && playerHand.value <= 21 && (
-                      <span className="text-sm text-green-300 ml-2">(soft)</span>
+                      <span className="text-sm text-green-300 ml-2">({t("games.blackjack.soft")})</span>
                     )}
                   </motion.p>
                 )}
                 <div className="inline-block px-4 py-1 bg-black/30 rounded-full text-sm text-green-300 mt-4">
-                  Your Hand
+                  {t("games.blackjack.yourHand")}
                 </div>
               </div>
             </div>
@@ -339,7 +337,7 @@ export function BlackjackGame() {
               <div className="p-4 bg-muted/20 border-t border-border/50">
                 <div className="flex items-center gap-2 mb-3">
                   <History className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Recent Games</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t("games.blackjack.recentGames")}</span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {history.map((item, i) => (
@@ -356,7 +354,7 @@ export function BlackjackGame() {
                           : "bg-red-500/20 text-red-400 border border-red-500/30"
                       )}
                     >
-                      {item.win ? `+${formatBalance(item.payout)}` : item.payout > 0 ? "Push" : "Lost"}
+                      {item.win ? `+${formatBalance(item.payout)}` : item.payout > 0 ? t("games.blackjack.push") : t("games.blackjack.lost")}
                     </motion.div>
                   ))}
                 </div>
@@ -368,19 +366,19 @@ export function BlackjackGame() {
         {/* Controls */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle>Controls</CardTitle>
+            <CardTitle>{t("games.blackjack.controls")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Balance */}
-            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-              <p className="text-xs text-muted-foreground mb-1">Your Balance</p>
-              <p className="text-2xl font-bold text-gradient-gold tabular-nums">{formatBalance(balance)}</p>
+            <div className="p-4 rounded-xl surface-soft border border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">{t("common.balance")}</p>
+              <p className="text-2xl font-bold text-foreground tabular-nums">{formatBalance(balance)}</p>
             </div>
 
             {!gameActive ? (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Bet Amount</label>
+                  <label className="text-sm font-medium">{t("games.bonus.bet")}</label>
                   <Input
                     type="number"
                     value={bet}
@@ -410,7 +408,7 @@ export function BlackjackGame() {
                 </div>
 
                 <Button
-                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
+                  className="w-full h-14 text-lg font-bold bg-amber-500 text-white hover:bg-amber-600"
                   onClick={startGame}
                   disabled={loading || bet <= 0 || bet > balance}
                 >
@@ -419,7 +417,7 @@ export function BlackjackGame() {
                   ) : (
                     <>
                       <span className="mr-2">🃏</span>
-                      Deal
+                      {t("games.blackjack.deal")}
                     </>
                   )}
                 </Button>
@@ -427,11 +425,11 @@ export function BlackjackGame() {
             ) : (
               <div className="space-y-3">
                 <Button
-                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                  className="w-full h-12 text-lg font-bold bg-emerald-500 text-white hover:bg-emerald-600"
                   onClick={() => handleAction("hit")}
                   disabled={loading || !canHit}
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Hit"}
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("games.blackjack.hit")}
                 </Button>
                 <Button
                   className="w-full h-12 text-lg font-bold"
@@ -439,26 +437,26 @@ export function BlackjackGame() {
                   onClick={() => handleAction("stand")}
                   disabled={loading || !canStand}
                 >
-                  Stand
+                  {t("games.blackjack.stand")}
                 </Button>
               </div>
             )}
 
             {/* Payouts */}
             <div className="p-4 rounded-xl bg-muted/30 space-y-2 text-sm">
-              <p className="font-semibold">Payouts:</p>
+              <p className="font-semibold">{t("games.blackjack.payouts")}</p>
               <div className="space-y-1 text-muted-foreground">
                 <div className="flex justify-between">
-                  <span>Blackjack</span>
+                  <span>{t("games.blackjack.blackjack")}</span>
                   <span className="text-amber-400 font-bold">2.5×</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Regular Win</span>
+                  <span>{t("games.blackjack.regularWin")}</span>
                   <span className="text-amber-400 font-bold">2×</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Push</span>
-                  <span className="text-muted-foreground">Bet returned</span>
+                  <span>{t("games.blackjack.push")}</span>
+                  <span className="text-muted-foreground">{t("games.blackjack.betReturned")}</span>
                 </div>
               </div>
             </div>
