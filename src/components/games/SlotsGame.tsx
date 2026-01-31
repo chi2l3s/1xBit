@@ -43,6 +43,7 @@ export function SlotsGame() {
     payout: number
     winLines: { line: number; symbols: string; multiplier: number }[]
   } | null>(null)
+  const [reelsStopped, setReelsStopped] = useState(false)
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [jackpot, setJackpot] = useState(125847)
 
@@ -82,6 +83,7 @@ export function SlotsGame() {
     setSpinning(true)
     setResult(null)
     setPendingResult(null)
+    setReelsStopped(false)
 
     try {
       const res = await fetch("/api/games/slots", {
@@ -116,6 +118,7 @@ export function SlotsGame() {
     setSpinning(false)
     setResult(pendingResult)
     setPendingResult(null)
+    setReelsStopped(false)
     const now = new Date()
     setHistory(prev => [{
       win: pendingResult.win,
@@ -124,6 +127,12 @@ export function SlotsGame() {
     }, ...prev.slice(0, 9)])
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (reelsStopped && pendingResult) {
+      handleSpinComplete()
+    }
+  }, [reelsStopped, pendingResult])
 
   const handleBetChange = (value: string) => {
     const num = parseFloat(value)
@@ -217,7 +226,7 @@ export function SlotsGame() {
               grid={grid}
               spinning={spinning}
               winLines={result?.winLines}
-              onAllStopped={handleSpinComplete}
+              onAllStopped={() => setReelsStopped(true)}
               title={t("games.slots.title")}
               lineLabel={t("games.slots.lineLabel")}
             />
