@@ -40,9 +40,9 @@ export function SlotSymbol({ symbolId, isWinning = false, size = "md" }: SlotSym
     <div
       className={cn(
         sizeClasses[size],
-        "rounded-lg flex items-center justify-center shrink-0",
-        "bg-muted/40",
-        "border border-border/60",
+        "rounded-xl flex items-center justify-center shrink-0",
+        "bg-gradient-to-br from-white via-slate-100 to-slate-200",
+        "border border-amber-500/40 shadow-[inset_0_1px_4px_rgba(255,255,255,0.7),inset_0_-8px_10px_rgba(15,23,42,0.25)]",
         isWinning && "ring-2 ring-amber-400 animate-pulse"
       )}
     >
@@ -51,15 +51,16 @@ export function SlotSymbol({ symbolId, isWinning = false, size = "md" }: SlotSym
         alt={symbol.id}
         width={imgSizes[size]}
         height={imgSizes[size]}
-        className="object-contain"
+        className="object-contain drop-shadow-md"
         priority
       />
     </div>
   )
 }
 
-const SYMBOL_SIZE = 88
+const SYMBOL_SIZE = 96
 const VISIBLE = 3
+const REEL_SPINS = 4
 
 interface SlotReelProps {
   finalSymbols: string[]
@@ -72,105 +73,72 @@ export function SlotReel({ finalSymbols, spinning, reelIndex, onStop }: SlotReel
   const controls = useAnimation()
   const [symbols, setSymbols] = useState<string[]>(finalSymbols)
   const prevSpinning = useRef(false)
-  const hasResult = useRef(false)
 
   useEffect(() => {
     if (spinning && !prevSpinning.current) {
       prevSpinning.current = true
-      hasResult.current = false
 
-      const allSymbols: string[] = []
-      for (let i = 0; i < 20; i++) {
-        allSymbols.push(SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)].id)
-      }
-      allSymbols.push(...finalSymbols)
-      setSymbols(allSymbols)
+      const baseStrip = SLOT_SYMBOLS.map(symbol => symbol.id)
+      const spinStrip = Array.from({ length: REEL_SPINS + reelIndex }, () => baseStrip).flat()
+      const allSymbols = [...spinStrip, ...finalSymbols]
 
       const totalScroll = (allSymbols.length - VISIBLE) * SYMBOL_SIZE
-      const delay = reelIndex * 0.4
-      const duration = 2 + reelIndex * 0.5
+      const delay = reelIndex * 0.25
+      const duration = 2.2 + reelIndex * 0.35
 
       controls.set({ y: 0 })
-      controls.start({
-        y: -totalScroll,
-        transition: {
-          duration,
-          delay,
-          ease: [0.2, 0.8, 0.3, 1],
-        }
-      }).then(() => {
-        setSymbols(finalSymbols)
-        controls.set({ y: 0 })
-        onStop?.()
-      })
+      controls
+        .start({
+          y: -totalScroll,
+          transition: {
+            duration,
+            delay,
+            ease: [0.12, 0.9, 0.2, 1],
+          }
+        })
+        .then(() => {
+          setSymbols(finalSymbols)
+          controls.set({ y: 0 })
+          onStop?.()
+        })
     }
 
     if (!spinning && prevSpinning.current) {
       prevSpinning.current = false
-      if (!hasResult.current) {
-        hasResult.current = true
-        setSymbols(finalSymbols)
-        controls.set({ y: 0 })
-      }
+      setSymbols(finalSymbols)
+      controls.set({ y: 0 })
     }
   }, [spinning, finalSymbols, controls, reelIndex, onStop])
 
-  useEffect(() => {
-    if (spinning && prevSpinning.current) {
-      hasResult.current = true
-      const allSymbols: string[] = []
-      for (let i = 0; i < 20; i++) {
-        allSymbols.push(SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)].id)
-      }
-      allSymbols.push(...finalSymbols)
-      setSymbols(allSymbols)
-
-      const totalScroll = (allSymbols.length - VISIBLE) * SYMBOL_SIZE
-      const delay = reelIndex * 0.4
-      const duration = 2 + reelIndex * 0.5
-
-      controls.set({ y: 0 })
-      controls.start({
-        y: -totalScroll,
-        transition: {
-          duration,
-          delay,
-          ease: [0.2, 0.8, 0.3, 1],
-        }
-      }).then(() => {
-        setSymbols(finalSymbols)
-        controls.set({ y: 0 })
-        onStop?.()
-      })
-    }
-  }, [finalSymbols])
-
   return (
     <div className="relative">
-    <div className="bg-muted/40 rounded-xl p-1 border-2 border-amber-600/30">
-      <div
-        className="relative overflow-hidden rounded-lg bg-background/80"
-        style={{ height: SYMBOL_SIZE * VISIBLE }}
-      >
+      <div className="bg-gradient-to-b from-amber-300/20 via-amber-200/10 to-amber-500/20 rounded-2xl p-1 border border-amber-400/40 shadow-[0_8px_20px_rgba(15,23,42,0.35)]">
+        <div
+          className="relative overflow-hidden rounded-xl bg-slate-900/80"
+          style={{ height: SYMBOL_SIZE * VISIBLE }}
+        >
           <motion.div
             animate={controls}
             className="flex flex-col"
           >
             {symbols.map((id, i) => (
-              <div key={i} className="p-1" style={{ height: SYMBOL_SIZE }}>
+              <div key={i} className="p-1.5" style={{ height: SYMBOL_SIZE }}>
                 <SlotSymbol symbolId={id} size="lg" />
               </div>
             ))}
           </motion.div>
 
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-0 right-0 h-8 bg-background/60" />
-            <div className="absolute bottom-0 left-0 right-0 h-8 bg-background/60" />
+            <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-slate-900 via-slate-900/70 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-slate-900 via-slate-900/70 to-transparent" />
           </div>
 
-          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 pointer-events-none" style={{ height: SYMBOL_SIZE }}>
-            <div className="absolute inset-x-0 top-0 h-0.5 bg-amber-400/50" />
-            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-amber-400/50" />
+          <div
+            className="absolute left-0 right-0 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ height: SYMBOL_SIZE }}
+          >
+            <div className="absolute inset-x-4 top-0 h-0.5 bg-amber-300/70 shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
+            <div className="absolute inset-x-4 bottom-0 h-0.5 bg-amber-300/70 shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
           </div>
         </div>
       </div>
@@ -220,12 +188,15 @@ export function SlotMachine({
 
   return (
     <div className="relative">
-      <div className="bg-background/70 rounded-2xl p-4 border-2 border-amber-500/40 shadow-2xl">
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-1.5 bg-amber-300/90 rounded-full shadow-lg">
-          <span className="text-sm font-black text-amber-900 tracking-wider">{title}</span>
+      <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-black rounded-[32px] p-6 border border-amber-400/30 shadow-[0_30px_60px_rgba(15,23,42,0.65)]">
+        <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-8 py-2 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 rounded-full shadow-[0_6px_20px_rgba(251,191,36,0.6)]">
+          <span className="text-sm font-black text-amber-900 tracking-[0.2em]">{title}</span>
         </div>
 
-        <div className="flex gap-1.5 justify-center mt-2">
+        <div className="absolute -left-3 top-8 bottom-8 w-4 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-200 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]" />
+        <div className="absolute -right-3 top-8 bottom-8 w-4 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-200 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]" />
+
+        <div className="flex gap-2 justify-center mt-4">
           {[0, 1, 2, 3, 4].map((col) => (
             <SlotReel
               key={col}
@@ -256,7 +227,7 @@ export function SlotMachine({
         )}
       </div>
 
-      <div className="absolute -top-2 left-4 right-4 flex justify-between">
+      <div className="absolute -top-3 left-6 right-6 flex justify-between">
         {[...Array(9)].map((_, i) => (
           <motion.div
             key={i}
@@ -268,6 +239,8 @@ export function SlotMachine({
           />
         ))}
       </div>
+
+      <div className="absolute -bottom-4 left-8 right-8 h-8 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 shadow-[0_10px_20px_rgba(0,0,0,0.4)]" />
     </div>
   )
 }

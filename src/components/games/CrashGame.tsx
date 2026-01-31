@@ -316,7 +316,7 @@ export function CrashGame() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-emerald-500/20">
-            <div className="scale-[0.6] -m-2">
+            <div className="scale-[0.75] -m-1">
               <Rocket flame={false} glowClassName="bg-emerald-500/45" />
             </div>
           </div>
@@ -549,7 +549,18 @@ export function CrashGame() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">{t("games.bonus.autoCashout")}</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-muted-foreground">{t("games.bonus.autoCashout")}</label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setAutoCashOutEnabled(prev => !prev)}
+                  disabled={gameState === "playing"}
+                >
+                  {autoCashOutEnabled ? t("common.on") : t("common.off")}
+                </Button>
+              </div>
               <Input
                 type="number"
                 value={autoCashOut}
@@ -578,7 +589,9 @@ export function CrashGame() {
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t("games.bonus.target")}</span>
-                <span className="font-bold text-green-400">{autoCashOut.toFixed(2)}x</span>
+                <span className="font-bold text-green-400">
+                  {autoCashOutEnabled ? `${autoCashOut.toFixed(2)}x` : "--"}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t("games.bonus.potentialWin")}</span>
@@ -588,22 +601,35 @@ export function CrashGame() {
               </div>
             </div>
 
-            <Button
-              className={cn(
-                "w-full h-12 text-lg font-bold",
-                gameState === "playing"
-                  ? "bg-amber-500 text-white hover:bg-amber-600"
-                  : "bg-emerald-500 text-white hover:bg-emerald-600"
-              )}
-              onClick={startGame}
-              disabled={gameState === "playing" || bet <= 0 || bet > balance}
-            >
-              {gameState === "playing" ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  {t("games.crash.inFlight")}
-                </span>
-              ) : (
+            {gameState === "playing" ? (
+              <Button
+                className={cn(
+                  "w-full h-12 text-lg font-bold",
+                  "bg-amber-500 text-white hover:bg-amber-600"
+                )}
+                onClick={() => handleCashOut(currentMultiplier)}
+                disabled={cashOutPending}
+              >
+                {cashOutPending ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    {t("games.crash.inFlight")}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    {t("games.crash.cashOut")} {currentMultiplier.toFixed(2)}x
+                  </span>
+                )}
+              </Button>
+            ) : (
+              <Button
+                className={cn(
+                  "w-full h-12 text-lg font-bold",
+                  "bg-emerald-500 text-white hover:bg-emerald-600"
+                )}
+                onClick={startGame}
+                disabled={bet <= 0 || bet > balance}
+              >
                 <span className="flex items-center gap-2">
                   <span className="inline-flex scale-[0.7] -m-2">
                     <Rocket flame={false} />
