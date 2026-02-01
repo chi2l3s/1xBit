@@ -1,125 +1,178 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { ArrowLeft, QrCode, Timer } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { usePreferences } from "@/components/providers/PreferencesProvider"
+import { formatBalance } from "@/lib/utils"
+import { QrCode } from "lucide-react"
 
-const REDIRECT_SECONDS = 10
+const AUTO_REDIRECT_MS = 10000
 
-const QR_PATTERN = [
-  "111111101010111111",
-  "100000101101100001",
-  "101110101000101101",
-  "101110101110101101",
-  "101110100011101101",
-  "100000101010100001",
-  "111111101010111111",
-  "000000000000000000",
-  "110011100001110110",
-  "001101011110010011",
-  "110100110001101100",
-  "011011001011010010",
-  "101100101110001011",
-  "000000000000000000",
-  "111111100100111111",
-  "100000101111100001",
-  "101110100010101101",
-  "100000101101100001",
-  "111111101001111111",
-]
+function makeMockQrSvg(seed: string, size = 220) {
+  // Pseudo-QR: deterministic random blocks based on a seed hash (visual only)
+  let h = 2166136261
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619)
+  const rand = () => {
+    h += 0x6D2B79F5
+    let t = Math.imul(h ^ (h >>> 15), 1 | h)
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+
+  const cells = 29
+  const pad = 10
+  const cell = Math.floor((size - pad * 2) / cells)
+  const w = pad * 2 + cell * cells
+
+  const blocks: string[] = []
+  const isFinder = (x: number, y: number) => {
+    const inTL = x < 7 && y < 7
+    const inTR = x >= cells - 7 && y < 7
+    const inBL = x < 7 && y >= cells - 7
+    return inTL || inTR || inBL
+  }
+
+  for (let y = 0; y < cells; y++) {
+    for (let x = 0; x < cells; x++) {
+      if (isFinder(x, y)) continue
+      const r = rand()
+      if (r > 0.62) {
+        blocks.push(`<rect x="${pad + x * cell}" y="${pad + y * cell}" width="${cell}" height="${cell}" rx="2" />`)
+      }
+    }
+  }
+
+  const finder = (fx: number, fy: number) => {
+    const x = pad + fx * cell
+    const y = pad + fy * cell
+    const s = cell * 7
+    const inner = cell * 5
+    const dot = cell * 3
+    return `
+      <rect x="${x}" y="${y}" width="${s}" height="${s}" rx="8" fill="none" stroke="currentColor" stroke-width="${Math.max(2, Math.floor(cell / 2))}" />
+      <rect x="${x + cell}" y="${y + cell}" width="${inner}" height="${inner}" rx="6" fill="none" stroke="currentColor" stroke-width="${Math.max(2, Math.floor(cell / 2))}" />
+      <rect x="${x + cell * 2}" y="${y + cell * 2}" width="${dot}" height="${dot}" rx="6" fill="currentColor" />
+    `
+  }
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${w}" viewBox="0 0 ${w} ${w}">
+      <rect x="0" y="0" width="${w}" height="${w}" rx="20" fill="rgba(0,0,0,0)" />
+      <g fill="#0f172a" style="color:#0f172a">
+        ${finder(0, 0)}
+        ${finder(cells - 7, 0)}
+        ${finder(0, cells - 7)}
+        ${blocks.join("")}
+      </g>
+    </svg>
+  `
+  const encoded = encodeURIComponent(svg).replace(/%20/g, " ")
+  return `data:image/svg+xml;charset=utf-8,${encoded}`
+}
 
 export default function SbpPaymentPage() {
-  const { t } = usePreferences()
   const router = useRouter()
-  const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS)
+  const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
+  const { t } = usePreferences()
+  const hasProcessed = useRef(false)
+  const amountParam = searchParams.get("amount")
+  const amount = Number(amountParam ?? 0)
+  const hasAmount = Number.isFinite(amount) && amount > 0
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const qrCode = useMemo(() => {
+    const seed = `${session?.user?.id ?? "guest"}-${hasAmount ? amount : "default"}`
+    return makeMockQrSvg(seed)
+  }, [session?.user?.id, amount, hasAmount])
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSecondsLeft((prev) => Math.max(0, prev - 1))
-    }, 1000)
-
-    const timeout = setTimeout(() => {
-      router.push("/")
-    }, REDIRECT_SECONDS * 1000)
-
-    return () => {
-      clearInterval(interval)
-      clearTimeout(timeout)
+    if (status === "unauthenticated") {
+      router.push("/login")
     }
+  }, [status, router])
+
+  useEffect(() => {
+    if (status !== "authenticated" || !hasAmount || hasProcessed.current) return
+    hasProcessed.current = true
+    const runDeposit = async () => {
+      setIsProcessing(true)
+      try {
+        await fetch("/api/deposit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount, method: "sbp" }),
+        })
+      } catch (error) {
+        console.error("SBP deposit error:", error)
+      } finally {
+        setIsProcessing(false)
+      }
+    }
+    runDeposit()
+  }, [status, amount, hasAmount])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push("/")
+    }, AUTO_REDIRECT_MS)
+    return () => clearTimeout(timer)
   }, [router])
 
-  const rows = useMemo(() => QR_PATTERN.map((row) => row.split("")), [])
-
   return (
-    <div className="relative min-h-[70vh] overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-rose-200/40 via-purple-200/30 to-slate-100/30 p-6">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.35),transparent_55%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(248,113,113,0.25),transparent_55%)]" />
-
-      <div className="relative mx-auto flex max-w-5xl flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/60 shadow-lg">
-              <QrCode className="h-6 w-6 text-purple-500" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.18),_transparent_60%)]" />
+      <div className="relative max-w-6xl mx-auto px-6 py-12">
+        <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] items-center">
+          <div className="rounded-[32px] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/60">{t("sbp.scanTitle")}</p>
+                <p className="text-xl font-semibold">{t("sbp.subtitle")}</p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-400/20">
+                <QrCode className="h-6 w-6 text-emerald-200" />
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">{t("sbp.title")}</h1>
-              <p className="text-sm text-muted-foreground">{t("sbp.subtitle")}</p>
+            <div className="mt-8 flex items-center justify-center">
+              <div className="rounded-[28px] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.45)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrCode} alt="SBP QR" className="h-56 w-56" />
+              </div>
             </div>
+            <p className="mt-6 text-sm text-white/70">{t("sbp.scanSubtitle")}</p>
           </div>
-          <Button variant="ghost" onClick={() => router.push("/")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("sbp.backHome")}
-          </Button>
-        </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
-          <Card className="relative overflow-hidden border-0 bg-white/70 p-6 shadow-[0_20px_40px_rgba(15,23,42,0.12)]">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <div className="rounded-[28px] bg-white p-6 shadow-[inset_0_2px_6px_rgba(255,255,255,0.8),inset_0_-8px_12px_rgba(15,23,42,0.12)]">
-                <div className="grid grid-cols-[repeat(18,10px)] gap-[2px] bg-white p-2">
-                  {rows.map((row, rowIndex) =>
-                    row.map((cell, colIndex) => (
-                      <div
-                        key={`${rowIndex}-${colIndex}`}
-                        className={`h-2.5 w-2.5 rounded-[2px] ${cell === "1" ? "bg-slate-800" : "bg-white"}`}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-lg font-semibold">{t("sbp.scanTitle")}</p>
-                <p className="text-sm text-muted-foreground">{t("sbp.scanSubtitle")}</p>
-              </div>
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.4em] text-white/70">
+              SBP
             </div>
-          </Card>
-
-          <Card className="border-0 bg-white/60 p-6 shadow-[0_20px_40px_rgba(15,23,42,0.1)]">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                <Timer className="h-4 w-4 text-purple-500" />
-                {t("sbp.redirectLabel")}
+            <h1 className="text-3xl font-semibold md:text-4xl">{t("sbp.title")}</h1>
+            <p className="text-base text-white/70">{t("sbp.subtitle")}</p>
+            {hasAmount && (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/60">{t("common.total")}</p>
+                <p className="text-2xl font-semibold">{formatBalance(amount)}</p>
               </div>
-              <motion.div
-                key={secondsLeft}
-                initial={{ scale: 1.1, opacity: 0.7 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-4xl font-black text-purple-500"
+            )}
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/60">{t("sbp.redirectLabel")}</p>
+              <p className="text-sm text-white/70">{t("sbp.redirectHint")}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              <Button
+                className="h-12 rounded-full bg-emerald-500 px-6 text-base font-semibold text-slate-900 hover:bg-emerald-400"
+                onClick={() => router.push("/")}
               >
-                {secondsLeft}s
-              </motion.div>
-              <div className="rounded-2xl bg-white/70 p-4 text-sm text-muted-foreground">
-                {t("sbp.redirectHint")}
-              </div>
-              <Button className="w-full" onClick={() => router.push("/")}>
                 {t("sbp.backHome")}
               </Button>
+              <span className="text-xs text-white/60">
+                {isProcessing ? t("common.loading") : t("sbp.scanSubtitle")}
+              </span>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

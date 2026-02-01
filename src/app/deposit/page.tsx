@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,68 +20,6 @@ const PAYMENT_METHODS = [
   { id: "sbp", icon: QrCode, popular: true },
 ]
 
-function makeMockQrSvg(seed: string, size = 220) {
-  // Pseudo-QR: deterministic random blocks based on a seed hash (visual only)
-  let h = 2166136261
-  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619)
-  const rand = () => {
-    h += 0x6D2B79F5
-    let t = Math.imul(h ^ (h >>> 15), 1 | h)
-    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-
-  const cells = 29
-  const pad = 10
-  const cell = Math.floor((size - pad * 2) / cells)
-  const w = pad * 2 + cell * cells
-
-  const blocks: string[] = []
-  const isFinder = (x: number, y: number) => {
-    const inTL = x < 7 && y < 7
-    const inTR = x >= cells - 7 && y < 7
-    const inBL = x < 7 && y >= cells - 7
-    return inTL || inTR || inBL
-  }
-
-  for (let y = 0; y < cells; y++) {
-    for (let x = 0; x < cells; x++) {
-      if (isFinder(x, y)) continue
-      const r = rand()
-      if (r > 0.62) {
-        blocks.push(`<rect x="${pad + x * cell}" y="${pad + y * cell}" width="${cell}" height="${cell}" rx="2" />`)
-      }
-    }
-  }
-
-  const finder = (fx: number, fy: number) => {
-    const x = pad + fx * cell
-    const y = pad + fy * cell
-    const s = cell * 7
-    const inner = cell * 5
-    const dot = cell * 3
-    return `
-      <rect x="${x}" y="${y}" width="${s}" height="${s}" rx="8" fill="none" stroke="currentColor" stroke-width="${Math.max(2, Math.floor(cell / 2))}" />
-      <rect x="${x + cell}" y="${y + cell}" width="${inner}" height="${inner}" rx="6" fill="none" stroke="currentColor" stroke-width="${Math.max(2, Math.floor(cell / 2))}" />
-      <rect x="${x + cell * 2}" y="${y + cell * 2}" width="${dot}" height="${dot}" rx="6" fill="currentColor" />
-    `
-  }
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${w}" viewBox="0 0 ${w} ${w}">
-      <rect x="0" y="0" width="${w}" height="${w}" rx="20" fill="rgba(0,0,0,0)" />
-      <g fill="#94a3b8" style="color:#e5e7eb">
-        ${finder(0, 0)}
-        ${finder(cells - 7, 0)}
-        ${finder(0, cells - 7)}
-        ${blocks.join("")}
-      </g>
-    </svg>
-  `
-  const encoded = encodeURIComponent(svg).replace(/%20/g, " ")
-  return `data:image/svg+xml;charset=utf-8,${encoded}`
-}
-
 export default function DepositPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -91,14 +29,10 @@ export default function DepositPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState("card")
-  const [sbpQr, setSbpQr] = useState<string | null>(null)
-  const [sbpOpen, setSbpOpen] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState<number>(1000)
   const [withdrawPhone, setWithdrawPhone] = useState<string>("")
   const [withdrawLoading, setWithdrawLoading] = useState(false)
   const [withdrawSuccess, setWithdrawSuccess] = useState(false)
-
-  const sbpSeed = useMemo(() => `${session?.user?.id || "guest"}-${amount}-${Date.now()}`, [session?.user?.id, amount])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -125,11 +59,8 @@ export default function DepositPage() {
   const handleDeposit = async () => {
     if (!session || amount <= 0) return
 
-    // For SBP we show QR first; actual debit happens after user confirms in modal
-    if (selectedMethod === "sbp" && !sbpOpen) {
-      const qr = makeMockQrSvg(sbpSeed)
-      setSbpQr(qr)
-      setSbpOpen(true)
+    if (selectedMethod === "sbp") {
+      router.push(`/sbp-payment?amount=${amount}`)
       return
     }
 
@@ -472,71 +403,6 @@ export default function DepositPage() {
         </div>
       </div>
 
-      {/* SBP QR modal */}
-      <AnimatePresence>
-        {sbpOpen && sbpQr && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md p-6 rounded-2xl glass border border-border/60"
-            >
-              <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <QrCode className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">{t("deposit.sbpTitle")}</h2>
-              </div>
-              <button
-                onClick={() => {
-                  setSbpOpen(false)
-                  setSbpQr(null)
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                {t("deposit.sbpClose")}
-              </button>
-            </div>
-
-              <div className="flex flex-col items-center gap-4">
-                <div className="p-4 rounded-2xl bg-background border border-border/60">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={sbpQr} alt="SBP QR" className="h-52 w-52" />
-                </div>
-                <p className="text-sm text-center text-muted-foreground">
-                  {t("deposit.sbpDesc")}
-                </p>
-                <Button
-                  className="w-full h-11 font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
-                  onClick={async () => {
-                    await handleDeposit()
-                    setSbpOpen(false)
-                    setSbpQr(null)
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t("deposit.sbpConfirming")}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <QrCode className="h-4 w-4" />
-                      {t("deposit.sbpConfirm")}
-                    </span>
-                  )}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
