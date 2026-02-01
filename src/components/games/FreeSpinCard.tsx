@@ -6,6 +6,7 @@ import { Gift, Sparkles } from "lucide-react"
 import { formatBalance } from "@/lib/utils"
 import { usePreferences } from "@/components/providers/PreferencesProvider"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 const TWELVE_HOURS = 12 * 60 * 60 * 1000
 const STORAGE_KEY = "slots-free-spin-claim"
@@ -81,6 +82,14 @@ export function FreeSpinCard({ className }: { className?: string }) {
           {canClaim ? t("games.freeSpin.claim") : t("games.freeSpin.next")}
         </motion.button>
       </div>
+
+      <Link
+        href="/free-spin"
+        className="mt-3 flex items-center justify-between rounded-xl bg-background/70 px-3 py-2 text-xs font-semibold text-purple-200 hover:text-white transition-colors"
+      >
+        <span>{t("games.freeSpin.openWheel")}</span>
+        <span>→</span>
+      </Link>
 
       <div className="mt-3 flex items-center justify-between rounded-xl bg-background/60 px-3 py-2">
         <div className="text-xs text-muted-foreground">
