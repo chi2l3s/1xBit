@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { RouletteWheel, BettingTable } from "./roulette/RouletteWheel"
 import { usePreferences } from "@/components/providers/PreferencesProvider"
+import { RecentWins } from "./RecentWins"
 
 interface PlacedBet {
   type: BetType
@@ -388,6 +389,8 @@ export function RouletteGame() {
                 <span>{t("games.roulette.payout.dozen")}</span><span className="text-amber-400 text-right">3×</span>
               </div>
             </div>
+
+            <RecentWins />
           </CardContent>
         </Card>
       </div>

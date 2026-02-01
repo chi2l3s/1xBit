@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Rocket } from "./crash/Rocket"
 import { Explosion } from "./crash/Explosion"
 import { usePreferences } from "@/components/providers/PreferencesProvider"
+import { RecentWins } from "./RecentWins"
 
 type GameState = "waiting" | "playing" | "crashed" | "cashed_out"
 
@@ -638,6 +639,8 @@ export function CrashGame() {
                 </span>
               </Button>
             )}
+
+            <RecentWins />
           </CardContent>
         </Card>
       </div>

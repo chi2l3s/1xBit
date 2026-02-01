@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { AnimatedDice, DiceResultDisplay } from "./dice/AnimatedDice"
 import { usePreferences } from "@/components/providers/PreferencesProvider"
+import { RecentWins } from "./RecentWins"
 
 interface HistoryItem {
   roll: number
@@ -513,6 +514,8 @@ export function DiceGame() {
                 </span>
               )}
             </Button>
+
+            <RecentWins />
           </CardContent>
         </Card>
       </div>

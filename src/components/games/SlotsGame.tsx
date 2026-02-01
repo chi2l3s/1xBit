@@ -11,6 +11,8 @@ import { Loader2, Sparkles, Volume2, VolumeX, Zap, Trophy, History } from "lucid
 import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { SlotMachine, SLOT_SYMBOLS, SlotSymbol } from "./slots/SlotReel"
+import { RecentWins } from "./RecentWins"
+import { FreeSpinCard } from "./FreeSpinCard"
 import { usePreferences } from "@/components/providers/PreferencesProvider"
 
 interface HistoryItem {
@@ -379,6 +381,9 @@ export function SlotsGame() {
                 </div>
               </div>
             )}
+
+            <FreeSpinCard />
+            <RecentWins />
           </CardContent>
         </Card>
       </div>

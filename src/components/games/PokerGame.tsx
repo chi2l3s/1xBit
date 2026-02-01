@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { PlayingCard, CardData, Suit } from "./cards/PlayingCard"
 import { usePreferences } from "@/components/providers/PreferencesProvider"
+import { RecentWins } from "./RecentWins"
 
 type Phase = "betting" | "draw" | "complete"
 
@@ -464,6 +465,8 @@ export function PokerGame() {
                 ))}
               </div>
             </div>
+
+            <RecentWins />
           </CardContent>
         </Card>
       </div>

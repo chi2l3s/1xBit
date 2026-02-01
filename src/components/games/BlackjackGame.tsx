@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { GameHelpModal } from "./GameHelpModal"
 import { PlayingCard, CardData, Suit } from "./cards/PlayingCard"
 import { usePreferences } from "@/components/providers/PreferencesProvider"
+import { RecentWins } from "./RecentWins"
 
 interface DealerHand {
   cards: (GameCard | { hidden: true })[]
@@ -460,6 +461,8 @@ export function BlackjackGame() {
                 </div>
               </div>
             </div>
+
+            <RecentWins />
           </CardContent>
         </Card>
       </div>
