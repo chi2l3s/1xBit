@@ -258,6 +258,12 @@ export function CrashGame() {
     if (!roundId || settleRef.current) return
 
     settleRef.current = true
+    setGameState("crashed")
+    setResult({
+      win: false,
+      payout: 0,
+      multiplier: crashPoint ?? currentMultiplier,
+    })
 
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current)
@@ -273,7 +279,6 @@ export function CrashGame() {
       const data = await res.json()
 
       if (res.ok) {
-        setGameState("crashed")
         setResult({
           win: false,
           payout: 0,
