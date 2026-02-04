@@ -13,18 +13,7 @@ const STORAGE_KEY = "free-spin-wheel-last"
 const TWELVE_HOURS = 12 * 60 * 60 * 1000
 const PROMO_CODE = "FREEBONUS"
 
-const REWARDS = [
-  { label: "10", value: 10, type: "coins" },
-  { label: "20", value: 20, type: "coins" },
-  { label: "30", value: 30, type: "coins" },
-  { label: "50", value: 50, type: "coins" },
-  { label: "75", value: 75, type: "coins" },
-  { label: "Повестка", value: 0, type: "summons" },
-  { label: "100", value: 100, type: "coins" },
-  { label: "150", value: 150, type: "coins" },
-  { label: "200", value: 200, type: "coins" },
-  { label: "250", value: 250, type: "coins" },
-]
+const REWARDS = [{ label: "Повестка", value: 0, type: "summons" }]
 
 const formatRemaining = (ms: number) => {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000))
