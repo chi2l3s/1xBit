@@ -36,27 +36,27 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li>
-                <Link href="#" className="hover:text-foreground transition-colors">
+                <Link href="/legal/terms" className="hover:text-foreground transition-colors">
                   {t("footer.terms")}
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-foreground transition-colors">
+                <Link href="/legal/privacy" className="hover:text-foreground transition-colors">
                   {t("footer.privacy")}
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-foreground transition-colors">
+                <Link href="/legal/aml" className="hover:text-foreground transition-colors">
                   {t("footer.aml")}
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-foreground transition-colors">
+                <Link href="/legal/responsible" className="hover:text-foreground transition-colors">
                   {t("footer.responsible")}
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-foreground transition-colors">
+                <Link href="/legal/cookies" className="hover:text-foreground transition-colors">
                   {t("footer.cookies")}
                 </Link>
               </li>
