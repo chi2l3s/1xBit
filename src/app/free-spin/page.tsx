@@ -18,11 +18,12 @@ const REWARDS = [
   { label: "20", value: 20, type: "coins" },
   { label: "30", value: 30, type: "coins" },
   { label: "50", value: 50, type: "coins" },
-  { label: "Повестка на СВО", value: 0, type: "summons" },
   { label: "75", value: 75, type: "coins" },
+  { label: "Повестка", value: 0, type: "summons" },
   { label: "100", value: 100, type: "coins" },
   { label: "150", value: 150, type: "coins" },
   { label: "200", value: 200, type: "coins" },
+  { label: "250", value: 250, type: "coins" },
 ]
 
 const formatRemaining = (ms: number) => {
@@ -112,15 +113,15 @@ export default function FreeSpinPage() {
         <Card className="lg:col-span-2">
           <CardContent className="p-6">
             <div className="flex flex-col items-center gap-6">
-              <div className="relative w-72 h-72 sm:w-96 sm:h-96">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500/40 via-fuchsia-500/30 to-amber-300/30 blur-2xl" />
+              <div className="relative w-72 h-72 sm:w-[420px] sm:h-[420px]">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500/30 via-fuchsia-500/20 to-amber-300/30 blur-3xl" />
                 <motion.div
-                  className="relative w-full h-full rounded-full border-[12px] border-amber-300/70 shadow-[0_24px_50px_rgba(15,23,42,0.45)] overflow-hidden"
+                  className="relative w-full h-full rounded-full border-[14px] border-amber-200/80 shadow-[0_26px_60px_rgba(15,23,42,0.5)] overflow-hidden"
                   animate={{ rotate: rotation }}
-                  transition={{ duration: 4.8, ease: [0.12, 0.85, 0.18, 1] }}
+                  transition={{ duration: 5, ease: [0.12, 0.85, 0.18, 1] }}
                   style={{
                     background:
-                      "conic-gradient(#fbbf24 0deg 40deg, #a855f7 40deg 80deg, #22c55e 80deg 120deg, #eab308 120deg 160deg, #fb7185 160deg 200deg, #38bdf8 200deg 240deg, #f97316 240deg 280deg, #60a5fa 280deg 320deg, #a3e635 320deg 360deg)",
+                      "conic-gradient(#fde047 0deg 36deg, #a855f7 36deg 72deg, #22c55e 72deg 108deg, #38bdf8 108deg 144deg, #f472b6 144deg 180deg, #f59e0b 180deg 216deg, #34d399 216deg 252deg, #c084fc 252deg 288deg, #60a5fa 288deg 324deg, #fb7185 324deg 360deg)",
                   }}
                 >
                   {REWARDS.map((item, index) => (
@@ -129,28 +130,29 @@ export default function FreeSpinPage() {
                       className="absolute left-1/2 top-1/2 h-1/2 w-1/2 origin-bottom-left"
                       style={{ transform: `rotate(${index * (360 / REWARDS.length)}deg)` }}
                     >
-                      <div className="absolute left-2 top-6 w-32 -rotate-90 text-xs font-semibold text-slate-950/90">
+                      <div className="absolute left-6 top-6 w-36 -rotate-90 text-[11px] font-semibold text-slate-950/90">
                         {item.label}
                       </div>
                     </div>
                   ))}
-                  <div className="absolute inset-7 rounded-full bg-slate-950/80 border border-white/10 flex items-center justify-center">
-                    <div className="text-center">
-                      <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300">{t("games.freeSpin.prize")}</p>
-                      <p className="text-2xl font-black text-white">
+                  <div className="absolute inset-8 rounded-full bg-slate-950/90 border border-white/10 flex items-center justify-center">
+                    <div className="text-center space-y-1">
+                      <p className="text-[10px] uppercase tracking-[0.45em] text-amber-300">{t("games.freeSpin.prize")}</p>
+                      <p className="text-3xl font-black text-white">
                         {reward ? (reward.type === "summons" ? "Повестка" : `+${reward.value}`) : "?"}
                       </p>
                     </div>
                   </div>
                 </motion.div>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <div className="w-6 h-6 bg-amber-300 rounded-full shadow-[0_0_18px_rgba(251,191,36,0.9)]" />
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                  <div className="h-8 w-8 rotate-45 bg-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.9)]" />
+                  <div className="mt-1 h-2 w-2 rounded-full bg-amber-200" />
                 </div>
               </div>
 
               {reward?.type === "summons" && (
                 <motion.div
-                  className="relative w-full max-w-md"
+                  className="relative w-full max-w-lg"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6 }}
@@ -165,32 +167,32 @@ export default function FreeSpinPage() {
                         Письмо с уведомлением уже сформировано. Проверьте данные внутри.
                       </p>
                     </div>
-                    <div className="relative mt-6 h-48">
+                    <div className="relative mt-6 h-56">
                       <motion.div
-                        className="absolute inset-x-6 bottom-6 h-28 rounded-2xl bg-gradient-to-br from-amber-200 to-amber-100 shadow-[0_12px_30px_rgba(15,23,42,0.35)]"
-                        initial={{ y: 50, opacity: 0 }}
-                        animate={{ y: -8, opacity: 1 }}
-                        transition={{ duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}
+                        className="absolute inset-x-8 bottom-6 h-36 rounded-2xl bg-gradient-to-br from-white via-amber-50 to-amber-100 shadow-[0_12px_30px_rgba(15,23,42,0.35)]"
+                        initial={{ y: 70, opacity: 0 }}
+                        animate={{ y: -4, opacity: 1 }}
+                        transition={{ duration: 1, ease: [0.2, 0.8, 0.2, 1] }}
                       >
-                        <div className="h-full rounded-2xl border border-amber-300/40 bg-white/90 p-4 text-slate-800">
-                          <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500">Повестка</p>
-                          <p className="text-sm font-semibold">Андрухов Илья Сергеевич</p>
-                          <p className="text-xs text-slate-600">2009 года рождения</p>
-                          <div className="mt-3 h-px w-full bg-slate-200" />
-                          <div className="mt-2 flex items-center justify-between">
+                        <div className="h-full rounded-2xl border border-amber-300/40 bg-white/95 p-5 text-slate-800">
+                          <p className="text-[10px] uppercase tracking-[0.35em] text-slate-500">Повестка</p>
+                          <p className="text-base font-semibold">Андрухов Илья Сергеевич</p>
+                          <p className="text-sm text-slate-600">2009 года рождения</p>
+                          <div className="mt-4 h-px w-full bg-slate-200" />
+                          <div className="mt-3 flex items-center justify-between">
                             <span className="text-xs text-slate-500">Подпись</span>
-                            <span className="font-hand text-sm text-slate-700">И. С. Андрухов</span>
+                            <span className="font-hand text-base text-slate-700">И. С. Андрухов</span>
                           </div>
                         </div>
                       </motion.div>
-                      <div className="absolute inset-x-2 bottom-0 h-28 rounded-[28px] bg-amber-300/20 blur-lg" />
-                      <div className="absolute inset-x-4 bottom-2 h-24 rounded-3xl bg-amber-200/40 border border-amber-200/50" />
-                      <div className="absolute inset-x-4 bottom-2 h-24 rounded-3xl bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200 shadow-[0_10px_25px_rgba(15,23,42,0.25)]" />
-                      <div className="absolute inset-x-4 bottom-2 h-24 rounded-3xl border border-amber-100/60" />
-                      <div className="absolute inset-x-4 bottom-2 h-24">
+                      <div className="absolute inset-x-2 bottom-0 h-32 rounded-[28px] bg-amber-300/20 blur-lg" />
+                      <div className="absolute inset-x-5 bottom-1 h-28 rounded-3xl bg-amber-200/40 border border-amber-200/50" />
+                      <div className="absolute inset-x-5 bottom-1 h-28 rounded-3xl bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200 shadow-[0_10px_25px_rgba(15,23,42,0.25)]" />
+                      <div className="absolute inset-x-5 bottom-1 h-28 rounded-3xl border border-amber-100/60" />
+                      <div className="absolute inset-x-5 bottom-1 h-28">
                         <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-amber-200/40 via-transparent to-transparent" />
                         <div className="absolute inset-0 rounded-3xl border border-amber-100/50" />
-                        <div className="absolute left-1/2 top-0 h-12 w-12 -translate-x-1/2 -translate-y-5 rotate-45 bg-amber-200/90 border border-amber-100/80" />
+                        <div className="absolute left-1/2 top-0 h-14 w-14 -translate-x-1/2 -translate-y-6 rotate-45 bg-amber-200/90 border border-amber-100/80" />
                       </div>
                     </div>
                   </div>
