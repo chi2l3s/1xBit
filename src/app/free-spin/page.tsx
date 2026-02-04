@@ -156,12 +156,12 @@ export default function FreeSpinPage() {
                         Письмо с уведомлением уже сформировано. Проверьте данные внутри.
                       </p>
                     </div>
-                    <div className="relative mt-6 h-56">
+                    <div className="relative mt-6 h-60">
                       <motion.div
-                        className="absolute inset-x-8 bottom-6 h-36 rounded-2xl bg-gradient-to-br from-white via-amber-50 to-amber-100 shadow-[0_12px_30px_rgba(15,23,42,0.35)]"
-                        initial={{ y: 70, opacity: 0 }}
-                        animate={{ y: -4, opacity: 1 }}
-                        transition={{ duration: 1, ease: [0.2, 0.8, 0.2, 1] }}
+                        className="absolute inset-x-8 bottom-8 h-36 rounded-2xl bg-gradient-to-br from-white via-amber-50 to-amber-100 shadow-[0_12px_30px_rgba(15,23,42,0.35)]"
+                        initial={{ y: 90, opacity: 0 }}
+                        animate={{ y: -8, opacity: 1 }}
+                        transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1] }}
                       >
                         <div className="h-full rounded-2xl border border-amber-300/40 bg-white/95 p-5 text-slate-800">
                           <p className="text-[10px] uppercase tracking-[0.35em] text-slate-500">Повестка</p>
@@ -183,6 +183,16 @@ export default function FreeSpinPage() {
                         <div className="absolute inset-0 rounded-3xl border border-amber-100/50" />
                         <div className="absolute left-1/2 top-0 h-14 w-14 -translate-x-1/2 -translate-y-6 rotate-45 bg-amber-200/90 border border-amber-100/80" />
                       </div>
+                      <motion.div
+                        className="absolute inset-x-5 bottom-[84px] h-16 origin-top"
+                        initial={{ rotateX: 0 }}
+                        animate={{ rotateX: -155 }}
+                        transition={{ delay: 0.2, duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}
+                        style={{ transformStyle: "preserve-3d" }}
+                      >
+                        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-amber-200 via-amber-100 to-amber-50 border border-amber-100/70 shadow-[0_6px_16px_rgba(15,23,42,0.25)]" />
+                        <div className="absolute left-1/2 top-0 h-12 w-12 -translate-x-1/2 -translate-y-6 rotate-45 bg-amber-200/90 border border-amber-100/80" />
+                      </motion.div>
                     </div>
                   </div>
                 </motion.div>
