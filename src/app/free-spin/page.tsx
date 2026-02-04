@@ -14,14 +14,15 @@ const TWELVE_HOURS = 12 * 60 * 60 * 1000
 const PROMO_CODE = "FREEBONUS"
 
 const REWARDS = [
-  { label: "10", value: 10 },
-  { label: "20", value: 20 },
-  { label: "30", value: 30 },
-  { label: "50", value: 50 },
-  { label: "75", value: 75 },
-  { label: "100", value: 100 },
-  { label: "150", value: 150 },
-  { label: "200", value: 200 },
+  { label: "10", value: 10, type: "coins" },
+  { label: "20", value: 20, type: "coins" },
+  { label: "30", value: 30, type: "coins" },
+  { label: "50", value: 50, type: "coins" },
+  { label: "Повестка на СВО", value: 0, type: "summons" },
+  { label: "75", value: 75, type: "coins" },
+  { label: "100", value: 100, type: "coins" },
+  { label: "150", value: 150, type: "coins" },
+  { label: "200", value: 200, type: "coins" },
 ]
 
 const formatRemaining = (ms: number) => {
@@ -40,7 +41,7 @@ export default function FreeSpinPage() {
   const [now, setNow] = useState(Date.now())
   const [rotation, setRotation] = useState(0)
   const [spinning, setSpinning] = useState(false)
-  const [reward, setReward] = useState<number | null>(null)
+  const [reward, setReward] = useState<(typeof REWARDS)[number] | null>(null)
   const [promo, setPromo] = useState("")
   const [promoUnlocked, setPromoUnlocked] = useState(false)
 
@@ -68,9 +69,9 @@ export default function FreeSpinPage() {
     setSpinning(true)
     const index = Math.floor(Math.random() * REWARDS.length)
     const slice = 360 / REWARDS.length
-    const targetRotation = 360 * 6 + (REWARDS.length - index) * slice - slice / 2
+    const targetRotation = 360 * 7 + (REWARDS.length - index) * slice - slice / 2
     setRotation(prev => prev + targetRotation)
-    const rewardValue = REWARDS[index].value
+    const rewardValue = REWARDS[index]
     setTimeout(() => {
       setReward(rewardValue)
       const timestamp = Date.now()
@@ -111,21 +112,34 @@ export default function FreeSpinPage() {
         <Card className="lg:col-span-2">
           <CardContent className="p-6">
             <div className="flex flex-col items-center gap-6">
-              <div className="relative w-72 h-72 sm:w-80 sm:h-80">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500/40 via-fuchsia-500/20 to-amber-300/30 blur-2xl" />
+              <div className="relative w-72 h-72 sm:w-96 sm:h-96">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500/40 via-fuchsia-500/30 to-amber-300/30 blur-2xl" />
                 <motion.div
-                  className="relative w-full h-full rounded-full border-[10px] border-amber-300/60 shadow-[0_20px_40px_rgba(15,23,42,0.4)] overflow-hidden"
+                  className="relative w-full h-full rounded-full border-[12px] border-amber-300/70 shadow-[0_24px_50px_rgba(15,23,42,0.45)] overflow-hidden"
                   animate={{ rotate: rotation }}
-                  transition={{ duration: 4.2, ease: [0.12, 0.8, 0.2, 1] }}
+                  transition={{ duration: 4.8, ease: [0.12, 0.85, 0.18, 1] }}
                   style={{
                     background:
-                      "conic-gradient(#fbbf24 0deg 45deg, #a855f7 45deg 90deg, #22c55e 90deg 135deg, #eab308 135deg 180deg, #f472b6 180deg 225deg, #4ade80 225deg 270deg, #f97316 270deg 315deg, #60a5fa 315deg 360deg)",
+                      "conic-gradient(#fbbf24 0deg 40deg, #a855f7 40deg 80deg, #22c55e 80deg 120deg, #eab308 120deg 160deg, #fb7185 160deg 200deg, #38bdf8 200deg 240deg, #f97316 240deg 280deg, #60a5fa 280deg 320deg, #a3e635 320deg 360deg)",
                   }}
                 >
-                  <div className="absolute inset-6 rounded-full bg-slate-950/80 border border-white/10 flex items-center justify-center">
+                  {REWARDS.map((item, index) => (
+                    <div
+                      key={item.label}
+                      className="absolute left-1/2 top-1/2 h-1/2 w-1/2 origin-bottom-left"
+                      style={{ transform: `rotate(${index * (360 / REWARDS.length)}deg)` }}
+                    >
+                      <div className="absolute left-2 top-6 w-32 -rotate-90 text-xs font-semibold text-slate-950/90">
+                        {item.label}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="absolute inset-7 rounded-full bg-slate-950/80 border border-white/10 flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-xs uppercase tracking-[0.25em] text-amber-300">{t("games.freeSpin.prize")}</p>
-                      <p className="text-3xl font-black text-white">{reward ? `+${reward}` : "?"}</p>
+                      <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300">{t("games.freeSpin.prize")}</p>
+                      <p className="text-2xl font-black text-white">
+                        {reward ? (reward.type === "summons" ? "Повестка" : `+${reward.value}`) : "?"}
+                      </p>
                     </div>
                   </div>
                 </motion.div>
@@ -133,6 +147,55 @@ export default function FreeSpinPage() {
                   <div className="w-6 h-6 bg-amber-300 rounded-full shadow-[0_0_18px_rgba(251,191,36,0.9)]" />
                 </div>
               </div>
+
+              {reward?.type === "summons" && (
+                <motion.div
+                  className="relative w-full max-w-md"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <div className="relative rounded-3xl bg-slate-900/70 border border-white/10 p-6 overflow-hidden">
+                    <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-rose-500/20 blur-3xl" />
+                    <div className="absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-amber-400/20 blur-3xl" />
+                    <div className="relative">
+                      <p className="text-xs uppercase tracking-[0.4em] text-rose-300">Важное уведомление</p>
+                      <p className="text-lg font-semibold text-white">Повестка на СВО</p>
+                      <p className="text-sm text-white/70">
+                        Письмо с уведомлением уже сформировано. Проверьте данные внутри.
+                      </p>
+                    </div>
+                    <div className="relative mt-6 h-48">
+                      <motion.div
+                        className="absolute inset-x-6 bottom-6 h-28 rounded-2xl bg-gradient-to-br from-amber-200 to-amber-100 shadow-[0_12px_30px_rgba(15,23,42,0.35)]"
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: -8, opacity: 1 }}
+                        transition={{ duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}
+                      >
+                        <div className="h-full rounded-2xl border border-amber-300/40 bg-white/90 p-4 text-slate-800">
+                          <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500">Повестка</p>
+                          <p className="text-sm font-semibold">Андрухов Илья Сергеевич</p>
+                          <p className="text-xs text-slate-600">2009 года рождения</p>
+                          <div className="mt-3 h-px w-full bg-slate-200" />
+                          <div className="mt-2 flex items-center justify-between">
+                            <span className="text-xs text-slate-500">Подпись</span>
+                            <span className="font-hand text-sm text-slate-700">И. С. Андрухов</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                      <div className="absolute inset-x-2 bottom-0 h-28 rounded-[28px] bg-amber-300/20 blur-lg" />
+                      <div className="absolute inset-x-4 bottom-2 h-24 rounded-3xl bg-amber-200/40 border border-amber-200/50" />
+                      <div className="absolute inset-x-4 bottom-2 h-24 rounded-3xl bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200 shadow-[0_10px_25px_rgba(15,23,42,0.25)]" />
+                      <div className="absolute inset-x-4 bottom-2 h-24 rounded-3xl border border-amber-100/60" />
+                      <div className="absolute inset-x-4 bottom-2 h-24">
+                        <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-amber-200/40 via-transparent to-transparent" />
+                        <div className="absolute inset-0 rounded-3xl border border-amber-100/50" />
+                        <div className="absolute left-1/2 top-0 h-12 w-12 -translate-x-1/2 -translate-y-5 rotate-45 bg-amber-200/90 border border-amber-100/80" />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
               <div className="text-center space-y-2">
                 <p className="text-sm text-muted-foreground">{t("games.freeSpin.timer")}</p>
@@ -196,7 +259,7 @@ export default function FreeSpinPage() {
             <div className="rounded-xl bg-emerald-500/10 p-4">
               <p className="text-xs text-muted-foreground">{t("games.freeSpin.lastReward")}</p>
               <p className="text-lg font-bold text-emerald-300">
-                {reward ? `+${formatBalance(reward)}` : "--"}
+                {reward ? (reward.type === "summons" ? "Повестка на СВО" : `+${formatBalance(reward.value)}`) : "--"}
               </p>
             </div>
           </CardContent>

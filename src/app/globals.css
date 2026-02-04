@@ -268,3 +268,8 @@ body {
   fill: none;
   filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.35));
 }
+
+.font-hand {
+  font-family: "Segoe Script", "Bradley Hand", "Comic Sans MS", cursive;
+  letter-spacing: 0.04em;
+}
